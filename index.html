@@ -1,1 +1,496 @@
+<!DOCTYPE html>
+<html lang="ru" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ИИ-Планировщик задач</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        html { background: linear-gradient(135deg, #e0e7ff, #e9d5ff); font-family: Inter, sans-serif; }
+        html.dark { background: linear-gradient(135deg, #1e293b, #334155); }
+        h1, h2 { font-family: Poppins, sans-serif; }
+        ul { list-style-type: disc; padding-left: 20px; }
+        .fade-in { animation: fadeIn 0.4s ease-in; }
+        .slide-in { animation: slideIn 0.4s ease-out; }
+        .unfold { animation: unfold 0.5s ease-out forwards; }
+        .slide-down { animation: slideDown 0.5s ease-out forwards; }
+        .input-animate { transition: transform 0.2s, opacity 0.2s, border-color 0.2s; }
+        .input-animate:focus { transform: scale(1.02); opacity: 1; }
+        .content-container { transition: height 0.5s ease-out; overflow: hidden; }
+        .ad-empty { border: 2px dashed #9ca3af; }
+        .dark .ad-empty { border-color: #6b7280; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        @keyframes unfold { from { height: 0; opacity: 0; } to { height: auto; opacity: 1; } }
+        @keyframes slideDown { from { transform: translateY(0); } to { transform: translateY(20px); } }
+        .btn { transition: transform 0.2s, box-shadow 0.2s; }
+        .btn:hover { transform: scale(1.05); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .btn:active { transform: scale(0.95); }
+        .spinner { border: 4px solid #f3f4f6; border-top: 4px solid #4f46e5; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; }
+        .dark .spinner { border: 4px solid #4b5563; border-top: 4px solid #818cf8; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-start p-4 sm:p-6 overflow-auto">
+    <div class="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-xl p-6 sm:p-8 content-container" id="content-container">
+        <div class="flex justify-between items-center mb-4">
+            <h1 class="text-2xl sm:text-3xl font-bold text-indigo-600 dark:text-indigo-400" id="title">ИИ-Планировщик задач</h1>
+            <div class="flex space-x-2">
+                <button class="text-lg sm:text-xl hover:text-indigo-600 dark:hover:text-indigo-400 btn" onclick="switchLanguage('ru')">🇷🇺</button>
+                <button class="text-lg sm:text-xl hover:text-indigo-600 dark:hover:text-indigo-400 btn" onclick="switchLanguage('en')">🇺🇸</button>
+                <button class="text-lg sm:text-xl hover:text-indigo-600 dark:hover:text-indigo-400 btn" onclick="toggleHistory()">⌛</button>
+                <button class="text-lg sm:text-xl hover:text-indigo-600 dark:hover:text-indigo-400 btn" onclick="toggleTheme()">🌙</button>
+            </div>
+        </div>
+        <div id="content" class="fade-in"></div>
+        <div id="error" class="text-red-500 text-sm mt-2 hidden"></div>
+        <div id="loading" class="text-gray-500 dark:text-gray-300 text-sm mt-2 hidden flex items-center space-x-2">
+            <div class="spinner"></div>
+            <span></span>
+        </div>
+        <div class="flex justify-between mt-4">
+            <button id="back-btn" class="bg-gray-300 dark:bg-gray-600 text-gray-700 dark:text-gray-200 px-4 py-2 rounded-lg btn hidden slide-in" onclick="goBack()"></button>
+            <button id="continue-btn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg btn slide-in"></button>
+        </div>
+    </div>
+    <div id="big-ad" class="w-full max-w-md mt-4 bg-yellow-100 dark:bg-yellow-200 rounded-lg shadow p-4 flex items-center space-x-4 h-40 sm:h-48 slide-in"></div>
+    <div id="small-ad" class="fixed bottom-0 w-full max-w-md bg-yellow-100 dark:bg-yellow-200 rounded-t-lg shadow p-4 flex items-center space-x-4 h-16 slide-in"></div>
 
+    <script>
+        // Ad configuration (update these values for your ads)
+        const adConfig = {
+            small: {
+                text: "", // e.g., "Check out our new product!"
+                url: "",  // e.g., "https://example.com"
+                imageSrc: "" // e.g., "https://example.com/ad-image.jpg"
+            },
+            big: {
+                text: "", // e.g., "Join our community!"
+                url: "",  // e.g., "https://example.com"
+                imageSrc: "" // e.g., "https://example.com/ad-image2.jpg"
+            }
+        };
+
+        // Localization
+        const translations = {
+            ru: {
+                title: "ИИ-Планировщик задач",
+                welcome: "Привет! Я твой ИИ-планировщик задач. Начни с ввода задач.",
+                step_tasks: "Введите список задач через запятую.",
+                step_importances: "Укажите важность для каждой задачи через запятую (низкая, средняя, высокая).",
+                step_time: "Укажите доступное время в формате ЧЧ:ММ - ЧЧ:ММ.",
+                placeholder_tasks: "Подготовить презентацию, Ответить на письма",
+                placeholder_importances: "высокая, средняя, низкая",
+                placeholder_time: "09:00 - 17:00",
+                continue: "Продолжить",
+                back: "Назад",
+                done: "Готово",
+                success_message: "План успешно создан!",
+                history_title: "История планов",
+                no_history: "Нет сохраненных планов.",
+                clear_history: "Очистить историю",
+                tasks_label: "Задачи",
+                importances_label: "Важности",
+                time_label: "Время",
+                schedule_label: "Расписание",
+                advice_label: "Совет",
+                task_count: "Введено задач: {count}",
+                no_ad: "Нет рекламы! XoX ⁉️",
+                error_tasks: "Укажите хотя бы одну задачу через запятую.",
+                error_importances: "Укажите правильное количество важностей (низкая, средняя, высокая).",
+                error_time: "Укажите время в формате ЧЧ:ММ - ЧЧ:ММ.",
+                error_processing: "Ошибка при обработке запроса.",
+                loading: "Загрузка...",
+                dark_mode: "Темный режим",
+                light_mode: "Светлый режим"
+            },
+            en: {
+                title: "AI Task Planner",
+                welcome: "Hello! I'm your AI task planner. Start by entering tasks.",
+                step_tasks: "Enter a list of tasks separated by commas.",
+                step_importances: "Specify importance for each task separated by commas (low, medium, high).",
+                step_time: "Specify available time in the format HH:MM - HH:MM.",
+                placeholder_tasks: "Prepare presentation, Reply to emails",
+                placeholder_importances: "high, medium, low",
+                placeholder_time: "09:00 - 17:00",
+                continue: "Continue",
+                back: "Back",
+                done: "Done",
+                success_message: "Plan successfully created!",
+                history_title: "Plan History",
+                no_history: "No saved plans.",
+                clear_history: "Clear History",
+                tasks_label: "Tasks",
+                importances_label: "Importances",
+                time_label: "Time",
+                schedule_label: "Schedule",
+                advice_label: "Advice",
+                task_count: "Tasks entered: {count}",
+                no_ad: "No ad! XoX ⁉️",
+                error_tasks: "Please specify at least one task separated by commas.",
+                error_importances: "Please specify the correct number of importances (low, medium, high).",
+                error_time: "Please specify time in the format HH:MM - HH:MM.",
+                error_processing: "Error processing request.",
+                loading: "Loading...",
+                dark_mode: "Dark Mode",
+                light_mode: "Light Mode"
+            }
+        };
+
+        let currentLang = 'ru';
+        let userData = { step: 'tasks', tasks: [], importances: [], time: '' };
+        let showHistory = false;
+        let isDarkMode = localStorage.getItem('theme') === 'dark';
+
+        // Load history from localStorage
+        let history = [];
+        try {
+            history = JSON.parse(localStorage.getItem('plannerHistory') || '[]');
+        } catch (e) {
+            console.error('Failed to parse history:', e);
+        }
+
+        // Apply theme
+        function applyTheme() {
+            document.documentElement.classList.toggle('dark', isDarkMode);
+            const themeButton = document.querySelector('button[onclick="toggleTheme()"]');
+            if (themeButton) {
+                themeButton.textContent = isDarkMode ? '☀️' : '🌙';
+            }
+            renderContent(); // Re-render to apply theme-specific styles
+        }
+
+        // Toggle theme
+        function toggleTheme() {
+            isDarkMode = !isDarkMode;
+            localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+            applyTheme();
+        }
+
+        // Ad setup
+        function setupAds() {
+            // Big ad
+            const bigAd = document.getElementById('big-ad');
+            bigAd.innerHTML = '';
+            if (adConfig.big.text && adConfig.big.url) {
+                bigAd.classList.remove('ad-empty');
+                if (adConfig.big.imageSrc) {
+                    const img = document.createElement('img');
+                    img.src = adConfig.big.imageSrc;
+                    img.className = 'w-12 h-12 rounded';
+                    bigAd.appendChild(img);
+                }
+                const text = document.createElement('span');
+                text.innerText = adConfig.big.text;
+                text.className = 'text-gray-700 dark:text-gray-800';
+                bigAd.appendChild(text);
+                bigAd.onclick = () => window.open(adConfig.big.url, '_blank');
+            } else {
+                bigAd.classList.add('ad-empty');
+                const text = document.createElement('span');
+                text.innerText = translations[currentLang].no_ad;
+                text.className = 'text-gray-700 dark:text-gray-800';
+                bigAd.appendChild(text);
+                bigAd.onclick = null;
+            }
+
+            // Small ad
+            const smallAd = document.getElementById('small-ad');
+            smallAd.innerHTML = '';
+            if (adConfig.small.text && adConfig.small.url) {
+                smallAd.classList.remove('ad-empty');
+                if (adConfig.small.imageSrc) {
+                    const img = document.createElement('img');
+                    img.src = adConfig.small.imageSrc;
+                    img.className = 'w-8 h-8 rounded';
+                    smallAd.appendChild(img);
+                }
+                const text = document.createElement('span');
+                text.innerText = adConfig.small.text;
+                text.className = 'text-gray-700 dark:text-gray-800 text-sm';
+                smallAd.appendChild(text);
+                smallAd.onclick = () => window.open(adConfig.small.url, '_blank');
+            } else {
+                smallAd.classList.add('ad-empty');
+                const text = document.createElement('span');
+                text.innerText = translations[currentLang].no_ad;
+                text.className = 'text-gray-700 dark:text-gray-800 text-sm';
+                smallAd.appendChild(text);
+                smallAd.onclick = null;
+            }
+        }
+
+        // Switch language
+        function switchLanguage(lang) {
+            currentLang = lang;
+            document.getElementById('title').innerText = translations[lang].title;
+            document.getElementById('continue-btn').innerText = translations[lang].continue;
+            document.getElementById('back-btn').innerText = translations[lang].back;
+            setupAds(); // Update ad text for language
+            renderContent();
+        }
+
+        // Toggle history view
+        function toggleHistory() {
+            showHistory = !showHistory;
+            renderContent();
+        }
+
+        // Clear history
+        function clearHistory() {
+            history = [];
+            localStorage.setItem('plannerHistory', JSON.stringify(history));
+            renderContent();
+        }
+
+        // Go back to previous step
+        function goBack() {
+            if (userData.step === 'importances') {
+                userData.step = 'tasks';
+            } else if (userData.step === 'time') {
+                userData.step = 'importances';
+            } else if (userData.step === 'done') {
+                userData.step = 'time';
+            }
+            renderContent();
+        }
+
+        // Trigger input animation
+        function triggerInputAnimation(input) {
+            input.classList.add('input-animate');
+            input.addEventListener('focus', () => input.style.opacity = '1');
+            input.addEventListener('keyup', () => {
+                input.style.transform = `scale(${1 + input.value.length * 0.001})`;
+            });
+        }
+
+        // Adjust container height
+        function adjustContainerHeight() {
+            const container = document.getElementById('content-container');
+            const content = document.getElementById('content');
+            container.style.height = `${content.offsetHeight + 150}px`; // Add padding for buttons
+            setTimeout(() => {
+                document.getElementById('big-ad').classList.add('slide-down');
+                document.getElementById('small-ad').classList.add('slide-down');
+            }, 200);
+        }
+
+        // Render content (steps or history)
+        function renderContent() {
+            const container = document.getElementById('content');
+            const backBtn = document.getElementById('back-btn');
+            const continueBtn = document.getElementById('continue-btn');
+            container.classList.remove('fade-in');
+            void container.offsetWidth; // Trigger reflow for animation
+            container.classList.add('fade-in');
+            container.innerHTML = '';
+            const lang = translations[currentLang];
+
+            backBtn.innerText = lang.back;
+            continueBtn.innerText = lang.continue;
+
+            if (showHistory) {
+                container.innerHTML = `
+                    <h2 class="text-xl font-semibold mb-4 text-gray-800 dark:text-gray-200">${lang.history_title}</h2>
+                    <button class="bg-red-500 text-white px-4 py-2 rounded-lg btn mb-4" onclick="clearHistory()">${lang.clear_history}</button>
+                    <div class="space-y-4 max-h-96 overflow-auto">
+                        ${history.length === 0 ? `<p class="text-gray-600 dark:text-gray-300">${lang.no_history}</p>` : history.map((plan, i) => `
+                            <div class="border p-4 rounded-lg bg-gray-50 dark:bg-gray-700">
+                                <p class="text-sm text-gray-500 dark:text-gray-300">${new Date(plan.timestamp).toLocaleString()}</p>
+                                <p class="text-gray-800 dark:text-gray-200"><strong>${lang.tasks_label}:</strong> ${plan.tasks.join(', ')}</p>
+                                <p class="text-gray-800 dark:text-gray-200"><strong>${lang.importances_label}:</strong> ${plan.importances.join(', ')}</p>
+                                <p class="text-gray-800 dark:text-gray-200"><strong>${lang.time_label}:</strong> ${plan.time}</p>
+                                <div class="text-sm text-gray-800 dark:text-gray-200">${plan.result}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                backBtn.classList.add('hidden');
+                continueBtn.classList.add('hidden');
+            } else if (userData.step === 'tasks') {
+                container.innerHTML = `
+                    <p class="mb-4 text-gray-600 dark:text-gray-300">${lang.welcome}</p>
+                    <p class="mb-2 text-gray-800 dark:text-gray-200">${lang.step_tasks}</p>
+                    <input id="input" type="text" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-300 dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="${lang.placeholder_tasks}">
+                    <p id="task-count" class="text-sm text-gray-500 dark:text-gray-300 mt-2">${lang.task_count.replace('{count}', userData.tasks.length)}</p>
+                `;
+                backBtn.classList.add('hidden');
+                continueBtn.classList.remove('hidden');
+                triggerInputAnimation(document.getElementById('input'));
+            } else if (userData.step === 'importances') {
+                container.innerHTML = `
+                    <p class="mb-2 text-gray-800 dark:text-gray-200">${lang.step_importances}</p>
+                    <p class="mb-2 text-sm text-gray-600 dark:text-gray-300">${lang.tasks_label}: ${userData.tasks.join(', ')}</p>
+                    <input id="input" list="importances" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-300 dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="${lang.placeholder_importances}">
+                    <datalist id="importances">
+                        <option value="${currentLang === 'ru' ? 'низкая' : 'low'}">
+                        <option value="${currentLang === 'ru' ? 'средняя' : 'medium'}">
+                        <option value="${currentLang === 'ru' ? 'высокая' : 'high'}">
+                    </datalist>
+                `;
+                backBtn.classList.remove('hidden');
+                continueBtn.classList.remove('hidden');
+                triggerInputAnimation(document.getElementById('input'));
+            } else if (userData.step === 'time') {
+                container.innerHTML = `
+                    <p class="mb-2 text-gray-800 dark:text-gray-200">${lang.step_time}</p>
+                    <input id="input" type="text" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-indigo-300 dark:bg-gray-700 dark:text-white dark:border-gray-600" placeholder="${lang.placeholder_time}">
+                `;
+                backBtn.classList.remove('hidden');
+                continueBtn.classList.remove('hidden');
+                triggerInputAnimation(document.getElementById('input'));
+            } else if (userData.step === 'done') {
+                container.innerHTML = `
+                    <div class="flex items-center space-x-2 mb-4 slide-in">
+                        <svg class="w-6 h-6 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                        <p class="text-green-500">${lang.success_message}</p>
+                    </div>
+                    <div class="unfold text-gray-800 dark:text-gray-200">${userData.result}</div>
+                    <button class="bg-green-500 text-white px-4 py-2 rounded-lg btn mt-4 slide-in" onclick="savePlan()">${lang.done}</button>
+                `;
+                backBtn.classList.remove('hidden');
+                continueBtn.classList.add('hidden');
+                adjustContainerHeight();
+            }
+
+            // Update task count dynamically
+            const input = document.getElementById('input');
+            if (input && userData.step === 'tasks') {
+                input.addEventListener('input', () => {
+                    const tasks = input.value.split(',').map(t => t.trim()).filter(t => t);
+                    document.getElementById('task-count').innerText = lang.task_count.replace('{count}', tasks.length);
+                });
+            }
+        }
+
+        // Mock Gemini response (HTML instead of Markdown)
+        function mockGeminiResponse(tasks, importances, timeRange) {
+            try {
+                const [start, end] = timeRange.split('-').map(t => t.trim());
+                const startTime = parseInt(start.split(':')[0]) * 60 + parseInt(start.split(':')[1]);
+                const endTime = parseInt(end.split(':')[0]) * 60 + parseInt(end.split(':')[1]);
+                if (isNaN(startTime) || isNaN(endTime) || endTime <= startTime) {
+                    throw new Error('Invalid time range');
+                }
+                const totalMinutes = endTime - startTime;
+                const taskDuration = Math.floor(totalMinutes / tasks.length);
+
+                // Prioritize high-importance tasks
+                const sortedTasks = tasks.map((task, i) => ({
+                    task,
+                    importance: importances[i],
+                    priority: importances[i] === 'высокая' || importances[i] === 'high' ? 3 :
+                              importances[i] === 'средняя' || importances[i] === 'medium' ? 2 : 1
+                })).sort((a, b) => b.priority - a.priority);
+
+                // Generate schedule
+                let currentTime = startTime;
+                const schedule = sortedTasks.map(({ task }) => {
+                    const taskStart = `${Math.floor(currentTime / 60).toString().padStart(2, '0')}:${(currentTime % 60).toString().padStart(2, '0')}`;
+                    currentTime += taskDuration;
+                    const taskEnd = `${Math.floor(currentTime / 60).toString().padStart(2, '0')}:${(currentTime % 60).toString().padStart(2, '0')}`;
+                    return `<li>${taskStart} - ${taskEnd}: ${task}</li>`;
+                }).join('');
+
+                // Generate advice
+                const advice = currentLang === 'ru' ?
+                    `Сосредоточьтесь на задачах с высокой важностью в начале периода. Делайте короткие перерывы каждые 60 минут, чтобы поддерживать продуктивность.` :
+                    `Focus on high-importance tasks at the start of the period. Take short breaks every 60 minutes to maintain productivity.`;
+
+                // Format response as HTML
+                return `
+                    <b class="text-lg">${translations[currentLang].schedule_label}</b>
+                    <ul class="list-disc pl-5 text-gray-800 dark:text-gray-200">${schedule}</ul>
+                    <b class="mt-4 block text-lg">${translations[currentLang].advice_label}</b>
+                    <p class="text-gray-800 dark:text-gray-200">${advice}</p>
+                `;
+            } catch (e) {
+                throw new Error('Failed to generate schedule: ' + e.message);
+            }
+        }
+
+        // Validate and process input
+        function processInput() {
+            const input = document.getElementById('input');
+            if (!input) return;
+            const value = input.value.trim();
+            const errorDiv = document.getElementById('error');
+            errorDiv.classList.add('hidden');
+            const lang = translations[currentLang];
+
+            if (userData.step === 'tasks') {
+                const tasks = value.split(',').map(t => t.trim()).filter(t => t);
+                if (tasks.length < 1) {
+                    errorDiv.innerText = lang.error_tasks;
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+                userData.tasks = tasks;
+                userData.step = 'importances';
+            } else if (userData.step === 'importances') {
+                const importances = value.split(',').map(i => i.trim().toLowerCase());
+                if (importances.length !== userData.tasks.length || !importances.every(i => ['низкая', 'средняя', 'высокая', 'low', 'medium', 'high'].includes(i))) {
+                    errorDiv.innerText = lang.error_importances;
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+                userData.importances = importances.map(i => i === 'low' ? 'низкая' : i === 'medium' ? 'средняя' : i === 'high' ? 'высокая' : i);
+                userData.step = 'time';
+            } else if (userData.step === 'time') {
+                const timeRegex = /^\d{2}:\d{2}\s*-\s*\d{2}:\d{2}$/;
+                if (!timeRegex.test(value)) {
+                    errorDiv.innerText = lang.error_time;
+                    errorDiv.classList.remove('hidden');
+                    return;
+                }
+                userData.time = value;
+                userData.step = 'done';
+                submitData();
+                return;
+            }
+            renderContent();
+        }
+
+        // Submit data (mock Gemini response)
+        async function submitData() {
+            const loadingDiv = document.getElementById('loading');
+            loadingDiv.innerText = translations[currentLang].loading;
+            loadingDiv.classList.remove('hidden');
+
+            try {
+                // Simulate API delay
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                userData.result = mockGeminiResponse(userData.tasks, userData.importances, userData.time);
+                renderContent();
+            } catch (error) {
+                document.getElementById('error').innerText = translations[currentLang].error_processing;
+                document.getElementById('error').classList.remove('hidden');
+                userData.step = 'time'; // Revert to allow retry
+                renderContent();
+            } finally {
+                loadingDiv.classList.add('hidden');
+            }
+        }
+
+        // Save plan and reset
+        function savePlan() {
+            history.push({
+                tasks: userData.tasks,
+                importances: userData.importances,
+                time: userData.time,
+                result: userData.result,
+                timestamp: new Date().toISOString()
+            });
+            localStorage.setItem('plannerHistory', JSON.stringify(history));
+            userData = { step: 'tasks', tasks: [], importances: [], time: '' };
+            renderContent();
+        }
+
+        // Initial setup
+        applyTheme();
+        setupAds();
+        renderContent();
+    </script>
+</body>
+      </html>
