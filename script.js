@@ -15,7 +15,7 @@ const adConfig = {
             ko: "C.L.I.P 2: AI 프로젝트 — 먼저 시도해보세요"
         },
         url: "https://t.me/CLIP_Project_AI",
-        imageSrc: "https://ibb.co/zHJBZ9mG"
+        imageSrc: "https://postimg.cc/kVHqDhzr"
     },
     big: {
         text: {
@@ -33,7 +33,7 @@ const adConfig = {
             ko: "By ROlil Studio에 가입하세요! 더 많은 제품과 원하는 모든 것이 거기에 있습니다!"
         },
         url: "https://t.me/By_RORlil",
-        imageSrc: "https://ibb.co/RkX4yxSS"
+        imageSrc: "https://postimg.cc/Vrb1tWPJ"
     }
 };
 
