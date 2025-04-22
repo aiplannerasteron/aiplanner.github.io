@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const adConfig = {
         text: "Посетите By ROlil Studio и попробуйте новые продукты!",
         url: "https://t.me/By_RORlil",
-        imageUrl: "https://ibb.co/GQTv1mkn"
+        imageUrl: "IMG_20250417_224058_243.jpg"
     };
 
     const taskList = document.getElementById('task-list');
