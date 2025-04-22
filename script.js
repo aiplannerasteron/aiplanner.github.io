@@ -46,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
             appName: "📅🤖",
             addTasks: "➕📋",
             taskTitlePlaceholder: "📝",
-
             lowPriority: "🔽",
             mediumPriority: "🔄",
             highPriority: "🔼",
@@ -280,19 +279,22 @@ Keep the response concise and structured.`;
             scheduleOutput.textContent = schedule;
             resultSection.classList.remove('hidden');
         } catch (error) {
-            console.error('Ошибка API:', error.message);
+            const errorCode = Math.floor(Math.random() * 1000); // Генерация случайного номера ошибки
+            console.error(`${errorCode} — ${error.message}`);
             let errorMessage = translations[lang].errorApi;
             if (error.message.includes('API key')) {
                 errorMessage = lang === 'en' ? 'Invalid API key. Please check your configuration.' : 'Неверный ключ API. Проверьте конфигурацию.';
             } else if (error.message.includes('model')) {
                 errorMessage = lang === 'en' ? 'Model gemini-2.0-flash is not available. Contact support.' : 'Модель gemini-2.0-flash недоступна. Обратитесь в поддержку.';
+            } else {
+                console.error(`${errorCode} — ${error.message}`); // Логирование неизвестной ошибки
             }
 
             alert(errorMessage);
             // Заглушка
             scheduleOutput.textContent = lang === 'en' ? `
 Schedule:
-- 09:00 - 10:00: Example Task 1
+- 09:00 - 10:00: Example Task  lambdas
 - 10:00 - 11:00: Example Task 2
 
 Advice:
