@@ -1,0 +1,102 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="title">ИИ-Планировщик задач</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto:wght@400&family=Inter:wght@500&display=swap" rel="stylesheet">
+</head>
+<body class="light-theme">
+    <header>
+        <div class="logo">
+            <img src="logo.png" alt="Логотип ИИ-Планировщика" width="40">
+            <span data-i18n="appName">ИИ-Планировщик</span>
+        </div>
+        <nav>
+            <select id="language-switcher">
+                <option value="ru">🇷🇺 Русский</option>
+                <option value="en">🇬🇧 English</option>
+            </select>
+            <button id="theme-switcher" title="Сменить тему">☀️</button>
+        </nav>
+    </header>
+
+    <main>
+        <section class="task-input animate-pop-in">
+            <h2 data-i18n="addTasks">Добавить задачи</h2>
+            <div id="task-list">
+                <div class="task-entry">
+                    <input type="text" class="task-title" data-i18n-placeholder="taskTitlePlaceholder" placeholder="Название задачи" required>
+                    <select class="task-priority">
+                        <option value="низкая" data-i18n="lowPriority">Низкая</option>
+                        <option value="средняя" data-i18n="mediumPriority">Средняя</option>
+                        <option value="высокая" data-i18n="highPriority">Высокая</option>
+                    </select>
+                    <input type="text" class="task-category" data-i18n-placeholder="categoryPlaceholder" placeholder="Категория (например, Работа)" required>
+                    <button class="remove-task-btn" title="Удалить">🗑️</button>
+                </div>
+            </div>
+            <button id="add-task-btn" data-i18n="addTaskButton">➕ Добавить задачу</button>
+            <div class="time-input">
+                <label data-i18n="timeLabel">⏰ Доступное время:</label>
+                <input type="text" id="time-range" data-i18n-placeholder="timePlaceholder" placeholder="ЧЧ:ММ - ЧЧ:ММ (например, 09:00 - 17:00)" required>
+            </div>
+            <button id="submit-tasks" data-i18n="submitTasks">📅 Получить расписание</button>
+        </section>
+
+        <section class="result hidden animate-pop-in">
+            <h2 data-i18n="scheduleTitle">Расписание и советы</h2>
+            <div id="schedule-output"></div>
+        </section>
+
+        <section class="ad-banner animate-slide-in">
+            <a id="ad-link" href="https://example.com" target="_blank">
+                <img id="ad-image" src="ad-placeholder.png" alt="Реклама" width="100%">
+                <p id="ad-text">Настраиваемый рекламный текст</p>
+            </a>
+        </section>
+    </main>
+
+    <script src="script.js"></script>
+</body>
+</html>
