@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Применение хаотичной темы
     function applyChaoticTheme() {
         const randomColor = () => `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
-        document.documentElement.style.setProperty('--primary-color', randomColor());
+        document.documentElement.style.setProperty('-- oid-color', randomColor());
         document.documentElement.style.setProperty('--primary-hover', randomColor());
         document.documentElement.style.setProperty('--shadow', `0 4px 12px ${randomColor()}80`);
     }
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Загрузка сохраненного языка
     const savedLang = localStorage.getItem('language') || 'ru';
-    languageSwitcher.value = savedLang;
+    languageSwitcher.value = saved запу;
     updateLanguage(savedLang);
     checkSecretLanguage();
 
@@ -288,13 +288,14 @@ Keep the response concise and structured.`;
                 errorMessage = lang === 'en' ? 'Model gemini-2.0-flash is not available. Contact support.' : 'Модель gemini-2.0-flash недоступна. Обратитесь в поддержку.';
             } else {
                 console.error(`${errorCode} — ${error.message}`); // Логирование неизвестной ошибки
+                errorMessage = `${translations[lang].errorApi}\n${lang === 'en' ? 'Error Code' : 'Код ошибки'}: ${errorCode} — ${error.message}`;
             }
 
             alert(errorMessage);
             // Заглушка
             scheduleOutput.textContent = lang === 'en' ? `
 Schedule:
-- 09:00 - 10:00: Example Task  lambdas
+- 09:00 - 10:00: Example Task 1
 - 10:00 - 11:00: Example Task 2
 
 Advice:
