@@ -228,51 +228,53 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Формирование запроса
-        const taskListText = tasks.map((task, i) => `- ${task.title} (Важность: ${task.priority}, Категория: ${task.category})`).join('\n');
-        const prompt = `
-            Ты — ИИ-планировщик задач. У меня есть следующие задачи:
-            ${taskListText}
-            Доступное время: ${timeRange}.
-            Распредели задачи по времени и дай совет, как лучше их выполнить.
-            Ответ НЕ должен быть в формате Markdown:
-            - НЕ Используй **жирный текст** для заголовков (например, **Расписание** и **Совет**).
-            - Время и задачи в расписании НЕ пиши в виде списка с `-`.
-            - Совет НЕ оформляй в блоке кода с тройными обратными кавычками \`\`\`.
-            - Но сделай ответ кратким и структурированным.
-        `;
+const taskListText = tasks.map((task, i) => `- ${task.title} (Важность: ${task.priority}, Категория: ${task.category})`).join('\n');
+const prompt = `Ты — ИИ-планировщик задач. У меня есть следующие задачи:
+${taskListText}
+Доступное время: ${timeRange}.
+Распредели задачи по времени и дай совет, как лучше их выполнить.
+Сделай ответ кратким и структурированным.`;
 
-        try {
-            // Предполагается серверная прокси-обработка для безопасности API ключа
-            const response = await fetch('/api/gemini', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ prompt })
-            });
+// Если язык английский, переводим промпт
+if (lang === 'en') {
+    prompt = `You are an AI task planner. I have the following tasks:
+${taskListText}
+Available time: ${timeRange}.
+Schedule the tasks by time and provide advice on how to complete them efficiently.
+Keep the response concise and structured.`;
+}
 
-            if (!response.ok) {
-                throw new Error(`HTTP error! Status: ${response.status}`);
-            }
+try {
+    // Динамический импорт библиотеки
+    const { GoogleGenerativeAI } = await import("@google/generative-ai");
+    const genAI = new GoogleGenerativeAI("AIzaSyCUtheYwMYUhwkTjT5avcSGwetGXFqF-f0");
+    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-            const data = await response.json();
-            if (!data.schedule) {
-                throw new Error('Invalid response from API');
-            }
+    // Вызов API
+    const result = await model.generateContent(prompt);
+    const schedule = result.response.text();
 
-            scheduleOutput.textContent = data.schedule;
-            resultSection.classList.remove('hidden');
-        } catch (error) {
-            console.error('Ошибка:', error);
-            alert(translations[lang].errorApi);
-            // Заглушка
-            scheduleOutput.textContent = `
-Расписание
-- 09:00 - 10:00: Заглушка задачи 1
-- 10:00 - 11:00: Заглушка задачи 2
+    // Отображение результата
+    scheduleOutput.textContent = schedule;
+    resultSection.classList.remove('hidden');
+} catch (error) {
+    console.error('Ошибка:', error);
+    alert(translations[lang].errorApi);
+    // Заглушка для тестирования
+    scheduleOutput.textContent = lang === 'en' ? `
+Schedule:
+- 09:00 - 10:00: Example Task 1
+- 10:00 - 11:00: Example Task 2
 
-Совет
+Advice:
+Start with the most important task to maintain energy.
+    ` : `
+Расписание:
+- 09:00 - 10:00: Пример задачи 1
+- 10:00 - 11:00: Пример задачи 2
+
+Совет:
 Начните с самой важной задачи, чтобы сохранить энергию.
-            `;
-            resultSection.classList.remove('hidden');
-        }
-    });
-});
+    `;
+    resultSection.classList.remove('hidden');
+}
