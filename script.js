@@ -51,7 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             addTaskButton: "➕📋",
             timeLabel: "⏰:",
             timePlaceholder: "🕒 - 🕔",
-            submitTasks: "📅✅",
+            submitTasksWz: "📅✅",
             scheduleTitle: "📅📝",
             errorEmptyTasks: "⚠️📝❌",
             errorTimeFormat: "⚠️🕒🕔",
@@ -228,53 +228,55 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Формирование запроса
-const taskListText = tasks.map((task, i) => `- ${task.title} (Важность: ${task.priority}, Категория: ${task.category})`).join('\n');
-const prompt = `Ты — ИИ-планировщик задач. У меня есть следующие задачи:
+        const taskListText = tasks.map((task, i) => `- ${task.title} (Важность: ${task.priority}, Категория: ${task.category})`).join('\n');
+        let prompt = `Ты — ИИ-планировщик задач. У меня есть следующие задачи:
 ${taskListText}
 Доступное время: ${timeRange}.
 Распредели задачи по времени и дай совет, как лучше их выполнить.
 Сделай ответ кратким и структурированным.`;
 
-// Если язык английский, переводим промпт
-if (lang === 'en') {
-    prompt = `You are an AI task planner. I have the following tasks:
+        // Если язык английский, переводим промпт
+        if (lang === 'en') {
+            prompt = `You are an AI task planner. I have the following tasks:
 ${taskListText}
 Available time: ${timeRange}.
 Schedule the tasks by time and provide advice on how to complete them efficiently.
 Keep the response concise and structured.`;
-}
+        }
 
-try {
-    // Динамический импорт библиотеки
-    const { GoogleGenerativeAI } = await import("@google/generative-ai");
-    const genAI = new GoogleGenerativeAI("AIzaSyCUtheYwMYUhwkTjT5avcSGwetGXFqF-f0");
-    const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+        try {
+            // Динамический импорт библиотеки
+            const { GoogleGenerativeAI } = await import("https://unpkg.com/@google/generative-ai");
+            const genAI = new GoogleGenerativeAI("AIzaSyCUtheYwMYUhwkTjT5avcSGwetGXFqF-f0");
+            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); // Используем gemini-1.5-flash, так как 2.0-flash может быть недоступен
 
-    // Вызов API
-    const result = await model.generateContent(prompt);
-    const schedule = result.response.text();
+            // Вызов API
+            const result = await model.generateContent(prompt);
+            const schedule = result.response.text();
 
-    // Отображение результата
-    scheduleOutput.textContent = schedule;
-    resultSection.classList.remove('hidden');
-} catch (error) {
-    console.error('Ошибка:', error);
-    alert(translations[lang].errorApi);
-    // Заглушка для тестирования
-    scheduleOutput.textContent = lang === 'en' ? `
+            // Отображение результата
+            scheduleOutput.textContent = schedule;
+            resultSection.classList.remove('hidden');
+        } catch (error) {
+            console.error('Ошибка:', error);
+            alert(translations[lang].errorApi);
+            // Заглушка для тестирования
+            scheduleOutput.textContent = lang === 'en' ? `
 Schedule:
 - 09:00 - 10:00: Example Task 1
 - 10:00 - 11:00: Example Task 2
 
 Advice:
 Start with the most important task to maintain energy.
-    ` : `
+            ` : `
 Расписание:
 - 09:00 - 10:00: Пример задачи 1
 - 10:00 - 11:00: Пример задачи 2
 
 Совет:
 Начните с самой важной задачи, чтобы сохранить энергию.
-    `;
-    resultSection.classList.remove('hidden');
-}
+            `;
+            resultSection.classList.remove('hidden');
+        }
+    });
+});
