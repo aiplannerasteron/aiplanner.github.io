@@ -118,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Применение хаотичной темы
     function applyChaoticTheme() {
         const randomColor = () => `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
-        document.documentElement.style.setProperty('-- oid-color', randomColor());
+        document.documentElement.style.setProperty('--primary-color', randomColor());
         document.documentElement.style.setProperty('--primary-hover', randomColor());
         document.documentElement.style.setProperty('--shadow', `0 4px 12px ${randomColor()}80`);
     }
@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Загрузка сохраненного языка
     const savedLang = localStorage.getItem('language') || 'ru';
-    languageSwitcher.value = saved запу;
+    languageSwitcher.value = savedLang;
     updateLanguage(savedLang);
     checkSecretLanguage();
 
@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <option value="средняя" data-i18n="mediumPriority">${translations[savedLang].mediumPriority}</option>
                 <option value="высокая" data-i18n="highPriority">${translations[savedLang].highPriority}</option>
             </select>
-            <input type="text" class="task-category" data-i18n-placeholder="categoryPlaceholder" placeholder="${translations[savedLang].categoryPlaceholder}" required>
+            <input type="text" class="task-category" data-i18n-placeholder="categoryPlaceholder"名稱="${translations[savedLang].categoryPlaceholder}" required>
             <button class="remove-task-btn" title="Удалить">🗑️</button>
         `;
         taskList.appendChild(taskEntry);
@@ -281,32 +281,34 @@ Keep the response concise and structured.`;
         } catch (error) {
             const errorCode = Math.floor(Math.random() * 1000); // Генерация случайного номера ошибки
             console.error(`${errorCode} — ${error.message}`);
-            let errorMessage = translations[lang].errorApi;
+            let errorMessage, errorSource, errorDetails;
+
             if (error.message.includes('API key')) {
                 errorMessage = lang === 'en' ? 'Invalid API key. Please check your configuration.' : 'Неверный ключ API. Проверьте конфигурацию.';
+                errorSource = lang === 'en' ? 'API Configuration' : 'Конфигурация API';
+                errorDetails = lang === 'en' ? 'The provided API key is invalid or missing. Verify the key in the application settings.' : 'Предоставленный ключ API недействителен или отсутствует. Проверьте ключ в настройках приложения.';
             } else if (error.message.includes('model')) {
                 errorMessage = lang === 'en' ? 'Model gemini-2.0-flash is not available. Contact support.' : 'Модель gemini-2.0-flash недоступна. Обратитесь в поддержку.';
+                errorSource = lang === 'en' ? 'Model Availability' : 'Доступность модели';
+                errorDetails = lang === 'en' ? 'The specified model is not available. This may be due to service restrictions or configuration issues.' : 'Указанная модель недоступна. Это может быть связано с ограничениями сервиса или проблемами конфигурации.';
             } else {
+                errorMessage = translations[lang].errorApi;
+                errorSource = lang === 'en' ? 'Unknown API Error' : 'Неизвестная ошибка API';
+                errorDetails = `${errorCode} — ${error.message}`;
                 console.error(`${errorCode} — ${error.message}`); // Логирование неизвестной ошибки
-                errorMessage = `${translations[lang].errorApi}\n${lang === 'en' ? 'Error Code' : 'Код ошибки'}: ${errorCode} — ${error.message}`;
             }
 
             alert(errorMessage);
-            // Заглушка
             scheduleOutput.textContent = lang === 'en' ? `
-Schedule:
-- 09:00 - 10:00: Example Task 1
-- 10:00 - 11:00: Example Task 2
-
-Advice:
-Start with the most important task to maintain energy.
+Error:
+- Source: ${errorSource}
+- Message: ${errorMessage}
+- Details: ${errorDetails}
             ` : `
-Расписание:
-- 09:00 - 10:00: Пример задачи 1
-- 10:00 - 11:00: Пример задачи 2
-
-Совет:
-Начните с самой важной задачи, чтобы сохранить энергию.
+Ошибка:
+- Источник: ${errorSource}
+- Сообщение: ${errorMessage}
+- Детали: ${errorDetails}
             `;
             resultSection.classList.remove('hidden');
         }
