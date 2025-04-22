@@ -16,9 +16,10 @@ document.addEventListener('DOMContentLoaded', () => {
             submitTasks: "📅 Получить расписание",
             scheduleTitle: "Расписание и советы",
             errorEmptyTasks: "Заполните все поля задач!",
-            errorTimeFormat: "Укажите время в формате ЧЧ:ММ - ЧЧ:ММ",
+            errorTimeFormat: "Укажите время в формате ЧЧ:ММ - ЧЧ:ММ (например, 09:00 - 17:00)",
             errorApi: "Ошибка при получении расписания. Попробуйте позже.",
-            newLanguage: "Новый язык доступен!"
+            newLanguage: "Новый язык доступен!",
+            errorInvalidTime: "Некорректное время. Убедитесь, что время находится в диапазоне 00:00 - 23:59."
         },
         en: {
             title: "AI Task Planner",
@@ -35,15 +36,17 @@ document.addEventListener('DOMContentLoaded', () => {
             submitTasks: "📅 Get Schedule",
             scheduleTitle: "Schedule and Tips",
             errorEmptyTasks: "Fill in all task fields!",
-            errorTimeFormat: "Specify time in HH:MM - HH:MM format",
+            errorTimeFormat: "Specify time in HH:MM - HH:MM format (e.g., 09:00 - 17:00)",
             errorApi: "Error fetching schedule. Try again later.",
-            newLanguage: "New language available!"
+            newLanguage: "New language available!",
+            errorInvalidTime: "Invalid time. Ensure time is within 00:00 - 23:59."
         },
         wd: {
             title: "📅📋",
             appName: "📅🤖",
             addTasks: "➕📋",
             taskTitlePlaceholder: "📝",
+
             lowPriority: "🔽",
             mediumPriority: "🔄",
             highPriority: "🔼",
@@ -51,12 +54,13 @@ document.addEventListener('DOMContentLoaded', () => {
             addTaskButton: "➕📋",
             timeLabel: "⏰:",
             timePlaceholder: "🕒 - 🕔",
-            submitTasksWz: "📅✅",
+            submitTasks: "📅✅",
             scheduleTitle: "📅📝",
             errorEmptyTasks: "⚠️📝❌",
             errorTimeFormat: "⚠️🕒🕔",
             errorApi: "⚠️🤖❌",
-            newLanguage: "🆕🌐✅"
+            newLanguage: "🆕🌐✅",
+            errorInvalidTime: "⚠️🕒❌"
         }
     };
 
@@ -114,7 +118,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Применение хаотичной темы
     function applyChaoticTheme() {
-        const randomColor = () => `#${Math.floor(Math.random()*16777215).toString(16)}`;
+        const randomColor = () => `#${Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0')}`;
         document.documentElement.style.setProperty('--primary-color', randomColor());
         document.documentElement.style.setProperty('--primary-hover', randomColor());
         document.documentElement.style.setProperty('--shadow', `0 4px 12px ${randomColor()}80`);
@@ -130,17 +134,17 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateLanguage(lang) {
         document.querySelectorAll('[data-i18n]').forEach(element => {
             const key = element.getAttribute('data-i18n');
-            element.textContent = translations[lang][key];
+            element.textContent = translations[lang][key] || translations['ru'][key]; // Fallback to Russian
         });
         document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
             const key = element.getAttribute('data-i18n-placeholder');
-            element.placeholder = translations[lang][key];
+            element.placeholder = translations[lang][key] || translations['ru'][key];
         });
         document.querySelectorAll('option[data-i18n]').forEach(option => {
             const key = option.getAttribute('data-i18n');
-            option.textContent = translations[lang][key];
+            option.textContent = translations[lang][key] || translations['ru'][key];
         });
-        document.title = translations[lang].title;
+        document.title = translations[lang].title || translations['ru'].title;
         localStorage.setItem('language', lang);
     }
 
@@ -185,28 +189,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Удаление задачи
     taskList.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-task-btn') && taskList.children.length > 1) {
+        if (e.target.classList.contains('remove-task-btn')) {
             e.target.parentElement.remove();
         }
     });
+
+    // Валидация времени
+    function validateTimeRange(timeRange, lang) {
+        const timeRegex = /^(\d{2}):(\d{2})\s*-\s*(\d{2}):(\d{2})$/;
+        const match = timeRange.match(timeRegex);
+        if (!match) {
+            return { valid: false, error: translations[lang].errorTimeFormat };
+        }
+
+        const [, startHour, startMinute, endHour, endMinute] = match.map(Number);
+        if (
+            startHour > 23 || startMinute > 59 ||
+            endHour > 23 || endMinute > 59 ||
+            (startHour * 60 + startMinute) >= (endHour * 60 + endMinute)
+        ) {
+            return { valid: false, error: translations[lang].errorInvalidTime };
+        }
+
+        return { valid: true };
+    }
 
     // Отправка задач к API
     submitTasksBtn.addEventListener('click', async () => {
         const lang = languageSwitcher.value;
         const tasks = Array.from(taskList.querySelectorAll('.task-entry')).map(entry => ({
-            title: entry.querySelector('.task-title').value,
+            title: entry.querySelector('.task-title').value.trim(),
             priority: entry.querySelector('.task-priority').value,
-            category: entry.querySelector('.task-category').value
+            category: entry.querySelector('.task-category').value.trim()
         }));
-        const timeRange = timeRangeInput.value;
+        const timeRange = timeRangeInput.value.trim();
 
-        // Валидация
+        // Валидация задач
         if (!tasks.every(task => task.title && task.category)) {
             alert(translations[lang].errorEmptyTasks);
             return;
         }
-        if (!timeRange.match(/^\d{2}:\d{2}\s*-\s*\d{2}:\d{2}$/)) {
-            alert(translations[lang].errorTimeFormat);
+
+        // Валидация времени
+        const timeValidation = validateTimeRange(timeRange, lang);
+        if (!timeValidation.valid) {
+            alert(timeValidation.error);
             return;
         }
 
@@ -235,7 +262,6 @@ ${taskListText}
 Распредели задачи по времени и дай совет, как лучше их выполнить.
 Сделай ответ кратким и структурированным.`;
 
-        // Если язык английский, переводим промпт
         if (lang === 'en') {
             prompt = `You are an AI task planner. I have the following tasks:
 ${taskListText}
@@ -245,22 +271,25 @@ Keep the response concise and structured.`;
         }
 
         try {
-            // Динамический импорт библиотеки
-            const { GoogleGenerativeAI } = await import("https://unpkg.com/@google/generative-ai");
             const genAI = new GoogleGenerativeAI("AIzaSyCUtheYwMYUhwkTjT5avcSGwetGXFqF-f0");
-            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" }); // Используем gemini-1.5-flash, так как 2.0-flash может быть недоступен
+            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-            // Вызов API
             const result = await model.generateContent(prompt);
             const schedule = result.response.text();
 
-            // Отображение результата
             scheduleOutput.textContent = schedule;
             resultSection.classList.remove('hidden');
         } catch (error) {
-            console.error('Ошибка:', error);
-            alert(translations[lang].errorApi);
-            // Заглушка для тестирования
+            console.error('Ошибка API:', error.message);
+            let errorMessage = translations[lang].errorApi;
+            if (error.message.includes('API key')) {
+                errorMessage = lang === 'en' ? 'Invalid API key. Please check your configuration.' : 'Неверный ключ API. Проверьте конфигурацию.';
+            } else if (error.message.includes('model')) {
+                errorMessage = lang === 'en' ? 'Model gemini-2.0-flash is not available. Contact support.' : 'Модель gemini-2.0-flash недоступна. Обратитесь в поддержку.';
+            }
+
+            alert(errorMessage);
+            // Заглушка
             scheduleOutput.textContent = lang === 'en' ? `
 Schedule:
 - 09:00 - 10:00: Example Task 1
