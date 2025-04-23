@@ -180,7 +180,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <option value="средняя" data-i18n="mediumPriority">${translations[savedLang].mediumPriority}</option>
                 <option value="высокая" data-i18n="highPriority">${translations[savedLang].highPriority}</option>
             </select>
-            <input type="text" class="task-category" data-i18n-placeholder="categoryPlaceholder"名稱="${translations[savedLang].categoryPlaceholder}" required>
+            <input type="text" class="task-category" data-i18n-placeholder="categoryPlaceholder" placeholder="${translations[savedLang].categoryPlaceholder}" required>
             <button class="remove-task-btn" title="Удалить">🗑️</button>
         `;
         taskList.appendChild(taskEntry);
@@ -270,11 +270,29 @@ Keep the response concise and structured.`;
         }
 
         try {
-            const genAI = new GoogleGenerativeAI("AIzaSyCUtheYwMYUhwkTjT5avcSGwetGXFqF-f0");
-            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+            // WARNING: Hardcoding API keys in client-side code is insecure for production.
+            // For GitHub Pages, consider using a backend proxy to hide the API key.
+            const apiKey = "AIzaSyCUtheYwMYUhwkTjT5avcSGwetGXFqF-f0";
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: prompt
+                        }]
+                    }]
+                })
+            });
 
-            const result = await model.generateContent(prompt);
-            const schedule = result.response.text();
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const schedule = data.candidates[0].content.parts[0].text;
 
             scheduleOutput.textContent = schedule;
             resultSection.classList.remove('hidden');
@@ -284,11 +302,11 @@ Keep the response concise and structured.`;
             let errorMessage, errorSource, errorDetails;
 
             if (error.message.includes('API key')) {
-                errorMessage = lang === 'en' ? 'Invalid API key. Please check your configuration.' : 'Неверный ключ API. Проверьте конфигурацию.';
+                errorMessage = lang === 'en' ? 'Valid API key. Please check your configuration.' : 'Неверный ключ API. Проверьте конфигурацию.';
                 errorSource = lang === 'en' ? 'API Configuration' : 'Конфигурация API';
                 errorDetails = lang === 'en' ? 'The provided API key is invalid or missing. Verify the key in the application settings.' : 'Предоставленный ключ API недействителен или отсутствует. Проверьте ключ в настройках приложения.';
             } else if (error.message.includes('model')) {
-                errorMessage = lang === 'en' ? 'Model gemini-2.0-flash is not available. Contact support.' : 'Модель gemini-2.0-flash недоступна. Обратитесь в поддержку.';
+                errorMessage = lang === 'en' ? 'Model gemini-1.5-flash is not available. Contact support.' : 'Модель gemini-1.5-flash недоступна. Обратитесь в поддержку.';
                 errorSource = lang === 'en' ? 'Model Availability' : 'Доступность модели';
                 errorDetails = lang === 'en' ? 'The specified model is not available. This may be due to service restrictions or configuration issues.' : 'Указанная модель недоступна. Это может быть связано с ограничениями сервиса или проблемами конфигурации.';
             } else {
