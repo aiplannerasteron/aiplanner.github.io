@@ -259,14 +259,14 @@ document.addEventListener('DOMContentLoaded', () => {
 ${taskListText}
 Доступное время: ${timeRange}.
 Распредели задачи по времени и дай совет, как лучше их выполнить.
-Сделай ответ кратким и структурированным.`;
+Сделай ответ кратким и структурированным. Без форматирования. Пиши исключительно обычным текстом не используя Markdown или любое другое форматирование. Совет дай в стиле того, какая основная масса задач.`;
 
         if (lang === 'en') {
             prompt = `You are an AI task planner. I have the following tasks:
 ${taskListText}
 Available time: ${timeRange}.
 Schedule the tasks by time and provide advice on how to complete them efficiently.
-Keep the response concise and structured.`;
+Keep the response concise and structured. Don't use text formatting. No markdown and every formatting. Just plain text. Give advice at tasks style`;
         }
 
         try {
