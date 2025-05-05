@@ -1,5 +1,24 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getDatabase, ref, get, push } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
+
+// Конфигурация Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyD8o7Qy-nbdliOLSLJugzJ6cTzleNa8q0o",
+    authDomain: "aiplanner-31886.firebaseapp.com",
+    projectId: "aiplanner-31886",
+    storageBucket: "aiplanner-31886.firebasestorage.app",
+    messagingSenderId: "721297878184",
+    appId: "1:721297878184:web:20d5281e3e2523a1a5a69d",
+    measurementId: "G-7EHQBR6M2B",
+    databaseURL: "https://aiplanner-31886-default-rtdb.firebaseio.com"
+};
+
+// Инициализация Firebase
+const app = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+
 document.addEventListener('DOMContentLoaded', () => {
-    // Локализация Стрендж Юниверса
+    // Локализация
     const translations = {
         ru: {
             title: "ИИ-Планировщик задач",
@@ -32,7 +51,20 @@ document.addEventListener('DOMContentLoaded', () => {
             langEnglish: "🇺🇸",
             themeToggle: "☀️",
             projectDefense: "Надеемся на зачёт!",
-            removeTask: "Удалить"
+            removeTask: "Удалить",
+            saveSchedule: "Сохранить",
+            tryAgain: "Ещё раз",
+            rateSchedule: "Оценить",
+            ratingTitle: "Оцените совет",
+            usefulness: "Полезность",
+            speed: "Скорость",
+            accuracy: "Правильность",
+            submitRating: "Отправить",
+            ratingClose: "Закрыть",
+            statsBtn: "⭐",
+            statsTitle: "Рейтинги",
+            statsCount: "Оценок: ",
+            statsClose: "Закрыть"
         },
         en: {
             title: "AI Task Planner",
@@ -65,7 +97,20 @@ document.addEventListener('DOMContentLoaded', () => {
             langEnglish: "🇺🇸",
             themeToggle: "☀️",
             projectDefense: "Hoping for a pass!",
-            removeTask: "Remove"
+            removeTask: "Remove",
+            saveSchedule: "Save",
+            tryAgain: "Try Again",
+            rateSchedule: "Rate",
+            ratingTitle: "Rate the Advice",
+            usefulness: "Usefulness",
+            speed: "Speed",
+            accuracy: "Accuracy",
+            submitRating: "Submit",
+            ratingClose: "Close",
+            statsBtn: "⭐",
+            statsTitle: "Ratings",
+            statsCount: "Ratings: ",
+            statsClose: "Close"
         }
     };
 
@@ -79,10 +124,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingScreen = document.querySelector('.loading-screen');
     const longLoadingText = document.getElementById('long-loading');
     const typingEffect = document.querySelector('.typing-effect');
+    const taskInput = document.querySelector('.task-input');
     const taskList = document.getElementById('task-list');
     const addTaskBtn = document.getElementById('add-task-btn');
     const submitTasksBtn = document.getElementById('submit-tasks');
     const warningToggleBtn = document.getElementById('warning-toggle');
+    const statsBtn = document.getElementById('stats-btn');
     const timeStartInput = document.getElementById('time-start');
     const timeEndInput = document.getElementById('time-end');
     const aiInstructionsInput = document.getElementById('ai-instructions');
@@ -101,6 +148,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const warningCloseBtn = document.getElementById('warning-close');
     const logoText = document.querySelector('.logo-text');
     const projectDefenseText = document.querySelector('.project-defense');
+    const saveScheduleBtn = document.getElementById('save-schedule');
+    const tryAgainBtn = document.getElementById('try-again');
+    const rateBtn = document.getElementById('rate-btn');
+    const ratingWindow = document.querySelector('.rating-window');
+    const submitRatingBtn = document.getElementById('submit-rating');
+    const ratingCloseBtn = document.getElementById('rating-close');
+    const statsWindow = document.querySelector('.stats-window');
+    const statsCloseBtn = document.getElementById('stats-close');
 
     // Эффект печатания на фоне загрузки
     function startTypingEffect() {
@@ -171,14 +226,19 @@ document.addEventListener('DOMContentLoaded', () => {
     adText.textContent = adConfig.text;
 
     // Анимация баннера
-    const adAnimations = ['animate-zoom', 'animate-pulse', 'animate-slide-up'];
+    const adAnimations = ['animate-glow', 'animate-rotate', 'animate-bounce'];
     let currentAdAnimationIndex = 0;
     function switchAdAnimation() {
         adBanner.classList.remove(adAnimations[currentAdAnimationIndex]);
         currentAdAnimationIndex = (currentAdAnimationIndex + 1) % adAnimations.length;
         adBanner.classList.add(adAnimations[currentAdAnimationIndex]);
     }
-    setInterval(switchAdAnimation, 10000);
+    adBanner.addEventListener('animationend', switchAdAnimation);
+    setInterval(() => {
+        adBanner.classList.remove(adAnimations[currentAdAnimationIndex]);
+        currentAdAnimationIndex = (currentAdAnimationIndex + 1) % adAnimations.length;
+        adBanner.classList.add(adAnimations[currentAdAnimationIndex]);
+    }, 10000);
     switchAdAnimation();
 
     // Инициализация кнопок
@@ -221,6 +281,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.body.classList.add('language-transition');
         setTimeout(() => document.body.classList.remove('language-transition'), 300);
+        updateStats();
     }
 
     languageSwitchers.forEach(btn => {
@@ -237,7 +298,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             logoText.innerHTML = text;
             logoText.classList.remove('shine');
-        }, 1000);
+        }, 1500);
     });
 
     // Добавить новую задачу
@@ -301,6 +362,116 @@ document.addEventListener('DOMContentLoaded', () => {
         warningSection.classList.add('hidden');
     });
 
+    // Сохранение расписания
+    saveScheduleBtn.addEventListener('click', () => {
+        const schedule = scheduleOutput.textContent;
+        const blob = new Blob([schedule], { type: 'text/plain' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = translations[savedLang].scheduleTitle + '.txt';
+        link.click();
+        URL.revokeObjectURL(link.href);
+    });
+
+    // Сброс интерфейса
+    tryAgainBtn.addEventListener('click', () => {
+        resultSection.classList.add('hidden');
+        taskInput.classList.remove('hidden');
+        taskList.innerHTML = '';
+        addTask();
+        timeStartInput.value = '';
+        timeEndInput.value = '';
+        aiInstructionsInput.value = '';
+        scheduleOutput.textContent = '';
+        scheduleTitle.classList.add('hidden');
+        resultSection.style.transform = 'translateY(0)';
+        taskInput.style.opacity = '1';
+        taskInput.style.transform = 'scale(1)';
+    });
+
+    // Оценка
+    const emojis = ['😭', '😢', '😐', '🙂', '🤩'];
+    function updateEmoji(input, emojiElement) {
+        const value = parseInt(input.value);
+        emojiElement.textContent = emojis[value - 1];
+        emojiElement.classList.add('pop-in');
+        setTimeout(() => emojiElement.classList.remove('pop-in'), 500);
+    }
+
+    document.querySelectorAll('.rating-item input[type="range"]').forEach(input => {
+        const emojiElement = input.nextElementSibling;
+        updateEmoji(input, emojiElement);
+        input.addEventListener('input', () => updateEmoji(input, emojiElement));
+    });
+
+    rateBtn.addEventListener('click', () => {
+        ratingWindow.classList.remove('hidden');
+    });
+
+    submitRatingBtn.addEventListener('click', async () => {
+        const usefulness = parseInt(document.getElementById('usefulness').value);
+        const speed = parseInt(document.getElementById('speed').value);
+        const accuracy = parseInt(document.getElementById('accuracy').value);
+        try {
+            await push(ref(database, 'ratings'), {
+                usefulness,
+                speed,
+                accuracy,
+                timestamp: Date.now()
+            });
+            ratingWindow.classList.add('hidden');
+            updateStats();
+        } catch (error) {
+            console.error('Ошибка записи оценки:', error);
+        }
+    });
+
+    ratingCloseBtn.addEventListener('click', () => {
+        ratingWindow.classList.add('hidden');
+    });
+
+    // Статистика
+    statsBtn.addEventListener('click', () => {
+        statsWindow.classList.remove('hidden');
+        updateStats();
+    });
+
+    statsCloseBtn.addEventListener('click', () => {
+        statsWindow.classList.add('hidden');
+    });
+
+    async function updateStats() {
+        try {
+            const snapshot = await get(ref(database, 'ratings'));
+            if (snapshot.exists()) {
+                const ratings = snapshot.val();
+                const ratingsArray = Object.values(ratings);
+                const count = ratingsArray.length;
+                const avgUsefulness = (ratingsArray.reduce((sum, r) => sum + r.usefulness, 0) / count).toFixed(1);
+                const avgSpeed = (ratingsArray.reduce((sum, r) => sum + r.speed, 0) / count).toFixed(1);
+                const avgAccuracy = (ratingsArray.reduce((sum, r) => sum + r.accuracy, 0) / count).toFixed(1);
+
+                document.getElementById('stats-count').textContent = translations[savedLang].statsCount + count;
+                document.getElementById('usefulness-score').textContent = avgUsefulness;
+                document.getElementById('speed-score').textContent = avgSpeed;
+                document.getElementById('accuracy-score').textContent = avgAccuracy;
+                document.getElementById('usefulness-progress').style.width = `${(avgUsefulness / 5) * 100}%`;
+                document.getElementById('speed-progress').style.width = `${(avgSpeed / 5) * 100}%`;
+                document.getElementById('accuracy-progress').style.width = `${(avgAccuracy / 5) * 100}%`;
+            } else {
+                document.getElementById('stats-count').textContent = translations[savedLang].statsCount + '0';
+                document.getElementById('usefulness-score').textContent = '0.0';
+                document.getElementById('speed-score').textContent = '0.0';
+                document.getElementById('accuracy-score').textContent = '0.0';
+                document.getElementById('usefulness-progress').style.width = '0%';
+                document.getElementById('speed-progress').style.width = '0%';
+                document.getElementById('accuracy-progress').style.width = '0%';
+            }
+        } catch (error) {
+            console.error('Ошибка чтения статистики:', error);
+        }
+    }
+
     // Отправка задач к API
     submitTasksBtn.addEventListener('click', async () => {
         const lang = localStorage.getItem('language') || 'ru';
@@ -337,10 +508,16 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Показ загрузки
-        resultSection.classList.remove('hidden');
-        scheduleOutput.classList.add('blur');
-        animationOutput.classList.remove('hidden');
-        animationOutput.innerHTML = '<div class="loading"><span>.</span><span>.</span><span>.</span></div>';
+        taskInput.style.opacity = '0';
+        taskInput.style.transform = 'scale(0.8)';
+        setTimeout(() => {
+            taskInput.classList.add('hidden');
+            resultSection.classList.remove('hidden');
+            resultSection.style.transform = 'translateY(-100px)';
+            scheduleOutput.classList.add('blur');
+            animationOutput.classList.remove('hidden');
+            animationOutput.innerHTML = '<div class="loading"><span>.</span><span>.</span><span>.</span></div>';
+        }, 300);
 
         // Таймер долгой генерации
         const longGenerationTimeout = setTimeout(() => {
