@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Локализация
+    // Локализация Стрендж Юниверса
     const translations = {
         ru: {
             title: "ИИ-Планировщик задач",
