@@ -31,10 +31,7 @@ document.addEventListener('DOMContentLoaded', () => {
             langRussian: "🇷🇺",
             langEnglish: "🇺🇸",
             themeToggle: "☀️",
-            toggleDemo: "Включить демонстрационный режим",
-            toggleUser: "Включить пользовательский режим",
             projectDefense: "Надеемся на зачёт!",
-            modeSwitched: "Режим переключен",
             removeTask: "Удалить"
         },
         en: {
@@ -67,10 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
             langRussian: "🇷🇺",
             langEnglish: "🇺🇸",
             themeToggle: "☀️",
-            toggleDemo: "Enable Demo Mode",
-            toggleUser: "Enable User Mode",
             projectDefense: "Hoping for a pass!",
-            modeSwitched: "Mode switched",
             removeTask: "Remove"
         }
     };
@@ -81,17 +75,6 @@ document.addEventListener('DOMContentLoaded', () => {
         url: "https://t.me/By_RORlil",
         imageUrl: "IMG_20250417_224058_243.jpg"
     };
-
-    // Демонстрационные данные
-    const demoTasks = [
-        { title: "Подготовить презентацию", priority: "высокая" },
-        { title: "Ответить на письма", priority: "средняя" },
-        { title: "Провести встречу", priority: "низкая" }
-    ];
-    const demoSchedule = `09:00-10:30 Подготовить презентацию
-10:30-11:00 Ответить на письма
-11:00-12:00 Провести встречу
-Совет: Начните с самой важной задачи, чтобы сохранить энергию.`;
 
     const loadingScreen = document.querySelector('.loading-screen');
     const longLoadingText = document.getElementById('long-loading');
@@ -117,11 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const warningSection = document.querySelector('.warning');
     const warningCloseBtn = document.getElementById('warning-close');
     const logoText = document.querySelector('.logo-text');
-    const demoToggle = document.querySelector('.demo-toggle');
-    const modeToggleBtn = document.getElementById('mode-toggle');
     const projectDefenseText = document.querySelector('.project-defense');
-    const modeNotification = document.querySelector('.mode-notification');
-    let isDemoMode = false;
 
     // Эффект печатания на фоне загрузки
     function startTypingEffect() {
@@ -147,6 +126,13 @@ document.addEventListener('DOMContentLoaded', () => {
         longLoadingText.classList.remove('hidden');
         loadingScreen.querySelector('.loading-content').classList.add('blink');
     }, 5000);
+
+    // Скрытие экрана загрузки
+    setTimeout(() => {
+        clearInterval(typingInterval);
+        clearTimeout(longLoadingTimeout);
+        loadingScreen.classList.add('hidden');
+    }, 2000);
 
     // Проверка даты для эффекта 6 мая 2025
     const today = new Date();
@@ -184,6 +170,17 @@ document.addEventListener('DOMContentLoaded', () => {
     adImage.src = adConfig.imageUrl;
     adText.textContent = adConfig.text;
 
+    // Анимация баннера
+    const adAnimations = ['animate-zoom', 'animate-pulse', 'animate-slide-up'];
+    let currentAdAnimationIndex = 0;
+    function switchAdAnimation() {
+        adBanner.classList.remove(adAnimations[currentAdAnimationIndex]);
+        currentAdAnimationIndex = (currentAdAnimationIndex + 1) % adAnimations.length;
+        adBanner.classList.add(adAnimations[currentAdAnimationIndex]);
+    }
+    setInterval(switchAdAnimation, 10000);
+    switchAdAnimation();
+
     // Инициализация кнопок
     const savedTheme = localStorage.getItem('theme') || 'light';
     const savedLang = localStorage.getItem('language') || 'ru';
@@ -192,13 +189,6 @@ document.addEventListener('DOMContentLoaded', () => {
     languageSwitchers.forEach(btn => {
         btn.classList.toggle('active', btn.getAttribute('data-lang') === savedLang);
     });
-
-    // Скрытие экрана загрузки
-    setTimeout(() => {
-        clearInterval(typingInterval);
-        clearTimeout(longLoadingTimeout);
-        loadingScreen.classList.add('hidden');
-    }, 2000);
 
     // Переключение темы
     themeSwitcher.addEventListener('click', () => {
@@ -229,8 +219,8 @@ document.addEventListener('DOMContentLoaded', () => {
         languageSwitchers.forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
         });
-        document.body.classList.add('language_transition');
-        setTimeout(() => document.body.classList.remove('language_transition'), 300);
+        document.body.classList.add('language-transition');
+        setTimeout(() => document.body.classList.remove('language-transition'), 300);
     }
 
     languageSwitchers.forEach(btn => {
@@ -239,74 +229,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
     updateLanguage(savedLang);
 
-    // Анимация сворачивания
+    // Эффект гармошки для лого
     logoText.addEventListener('click', () => {
-        document.querySelector('main').classList.toggle('collapsed');
-        demoToggle.classList.toggle('hidden');
-        if (document.querySelector('main').classList.contains('collapsed')) {
-            logoText.classList.add('centered-logo');
-        } else {
-            logoText.classList.remove('centered-logo');
-        }
+        const text = logoText.textContent;
+        logoText.innerHTML = text.split('').map((char, i) => `<span class="logo-char" style="animation-delay: ${i * 0.1}s">${char}</span>`).join('');
+        logoText.classList.add('shine');
+        setTimeout(() => {
+            logoText.innerHTML = text;
+            logoText.classList.remove('shine');
+        }, 1000);
     });
-
-    // Переключение режимов
-    modeToggleBtn.addEventListener('click', () => {
-        isDemoMode = !isDemoMode;
-        modeToggleBtn.textContent = translations[savedLang][isDemoMode ? 'toggleUser' : 'toggleDemo'];
-        modeNotification.textContent = translations[savedLang].modeSwitched;
-        modeNotification.classList.remove('hidden');
-        setTimeout(() => modeNotification.classList.add('hidden'), 2000);
-        if (isDemoMode) {
-            enterDemoMode();
-        } else {
-            enterUserMode();
-        }
-    });
-
-    // Вход в демонстрационный режим
-    function enterDemoMode() {
-        taskList.innerHTML = '';
-        demoTasks.forEach(task => addDemoTask(task));
-        timeStartInput.value = '09:00';
-        timeEndInput.value = '12:00';
-        aiInstructionsInput.value = translations[savedLang].aiInstructionsPlaceholder;
-        adBanner.classList.add('hidden');
-        resultSection.classList.remove('hidden');
-        scheduleTitle.classList.remove('hidden');
-        scheduleOutput.textContent = demoSchedule;
-        scheduleOutput.classList.remove('blur');
-    }
-
-    // Вход в пользовательский режим
-    function enterUserMode() {
-        taskList.innerHTML = '';
-        addTask();
-        timeStartInput.value = '';
-        timeEndInput.value = '';
-        aiInstructionsInput.value = '';
-        adBanner.classList.remove('hidden');
-        resultSection.classList.add('hidden');
-        scheduleTitle.classList.add('hidden');
-        scheduleOutput.textContent = '';
-    }
-
-    // Добавление демонстрационной задачи
-    function addDemoTask(task) {
-        const taskEntry = document.createElement('div');
-        taskEntry.className = 'task-entry';
-        taskEntry.innerHTML = `
-            <input type="text" class="task-title" data-i18n-placeholder="taskTitlePlaceholder" value="${task.title}" required>
-            <div class="priority-buttons">
-                <button class="priority-btn ${task.priority === 'низкая' ? 'active' : ''}" data-priority="низкая" data-i18n="lowPriority">${translations[savedLang].lowPriority}</button>
-                <button class="priority-btn ${task.priority === 'средняя' ? 'active' : ''}" data-priority="средняя" data-i18n="mediumPriority">${translations[savedLang].mediumPriority}</button>
-                <button class="priority-btn ${task.priority === 'высокая' ? 'active' : ''}" data-priority="высокая" data-i18n="highPriority">${translations[savedLang].highPriority}</button>
-            </div>
-            <button class="remove-task-btn" title="${translations[savedLang].removeTask}">🗑️</button>
-        `;
-        taskList.appendChild(taskEntry);
-        attachPriorityListeners(taskEntry);
-    }
 
     // Добавить новую задачу
     function addTask() {
@@ -362,55 +294,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Кнопка предупреждения
     warningToggleBtn.addEventListener('click', () => {
         warningSection.classList.remove('hidden');
-        if (isDemoMode) {
-            scheduleOutput.classList.add('blur');
-            takeScreenshot();
-        }
     });
 
     // Закрытие предупреждения
     warningCloseBtn.addEventListener('click', () => {
         warningSection.classList.add('hidden');
-        if (isDemoMode) {
-            scheduleOutput.classList.remove('blur');
-        }
     });
-
-    // Создание скриншота
-    async function takeScreenshot() {
-        if (!isDemoMode) {
-            scheduleOutput.classList.remove('blur');
-        }
-        animationOutput.classList.add('hidden');
-        longGenerationText.classList.add('hidden');
-
-        const body = document.querySelector('body');
-        const canvas = await html2canvas(body, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            height: body.scrollHeight,
-            windowHeight: body.scrollHeight,
-            ignoreElements: (el) => {
-                return el.tagName === 'IFRAME' || el.classList.contains('warning') || el.classList.contains('demo-toggle') || el.classList.contains('loading-screen');
-            }
-        });
-
-        const link = document.createElement('a');
-        link.href = canvas.toDataURL('image/png');
-        link.download = 'ai-planner-screenshot.png';
-        link.click();
-    }
 
     // Отправка задач к API
     submitTasksBtn.addEventListener('click', async () => {
         const lang = localStorage.getItem('language') || 'ru';
-
-        // Демонстрационный режим: создание скриншота
-        if (isDemoMode) {
-            await takeScreenshot();
-            return;
-        }
 
         // Показ предупреждения при первой генерации
         if (!localStorage.getItem('warningShown')) {
