@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Локализация
+    // Локализация юниверс
     const translations = {
         ru: {
             title: "ИИ-Планировщик задач",
@@ -29,8 +29,8 @@ document.addEventListener('DOMContentLoaded', () => {
             langRussian: "🇷🇺",
             langEnglish: "🇬🇧",
             themeToggle: "☀️",
-            toggleDemo: "Включить демонстрационный режим",
-            toggleUser: "Включить пользовательский режим"
+            toggleDemo: "Демонстрационный режим",
+            toggleUser: "Пользовательский режим"
         },
         en: {
             title: "AI Task Planner",
@@ -60,8 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
             langRussian: "🇷🇺",
             langEnglish: "🇬🇧",
             themeToggle: "☀️",
-            toggleDemo: "Enable Demo Mode",
-            toggleUser: "Enable User Mode"
+            toggleDemo: "Demo Mode",
+            toggleUser: "User Mode"
         }
     };
 
