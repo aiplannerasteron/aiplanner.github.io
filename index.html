@@ -43,14 +43,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title data-i18n="title">ИИ-Планировщик задач</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Inter:wght@400;500&family=Roboto:wght@400;500&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto:wght@400&family=Inter:wght@500&display=swap" rel="stylesheet">
 </head>
 <body class="light-theme">
     <div class="loading-screen">
         <div class="loading-content">
             <div class="loading"><span>.</span><span>.</span><span>.</span></div>
-            <p id="long-loading" class="hidden" data-i18n="longLoading">Загрузка занимает больше времени...</p>
+            <div id="long-loading" class="hidden" data-i18n="longLoading">Загрузка занимает больше времени...</div>
         </div>
         <div class="typing-effect"></div>
     </div>
@@ -67,113 +67,58 @@
     </header>
 
     <main>
-        <div class="warning hidden">
-            <div class="warning-content">
-                <span class="warning-icon">⚠️</span>
-                <div class="warning-text">
-                    <h2 data-i18n="warningTitle">Предупреждение</h2>
-                    <p data-i18n="warningVpn">Для пользователей из РФ: используйте VPN-сервис для стабильной работы.</p>
-                    <p data-i18n="warningAccuracy">ИИ может выдавать ошибочные ответы. Проверяйте результаты.</p>
-                    <button id="warning-close" data-i18n="warningClose">Понятно</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="stats-window hidden">
-            <div class="stats-content">
-                <h2 data-i18n="statsTitle">Рейтинги</h2>
-                <p id="stats-count" data-i18n="statsCount">Оценок: 0</p>
-                <div class="stats-item">
-                    <span data-i18n="usefulness">Полезность:</span>
-                    <div class="progress-bar">
-                        <div id="usefulness-progress" class="progress-fill"></div>
-                    </div>
-                    <span id="usefulness-score">0.0</span>
-                </div>
-                <div class="stats-item">
-                    <span data-i18n="speed">Скорость:</span>
-                    <div class="progress-bar">
-                        <div id="speed-progress" class="progress-fill"></div>
-                    </div>
-                    <span id="speed-score">0.0</span>
-                </div>
-                <div class="stats-item">
-                    <span data-i18n="accuracy">Правильность:</span>
-                    <div class="progress-bar">
-                        <div id="accuracy-progress" class="progress-fill"></div>
-                    </div>
-                    <span id="accuracy-score">0.0</span>
-                </div>
-                <button id="stats-close" data-i18n="statsClose">Закрыть</button>
-            </div>
-        </div>
-
-        <div class="rating-window hidden">
-            <div class="rating-content">
-                <h2 data-i18n="ratingTitle">Оцените совет</h2>
-                <div class="rating-item">
-                    <label data-i18n="usefulness">Полезность:</label>
-                    <input type="range" id="usefulness" min="1" max="5" value="3">
-                    <span class="rating-emoji">😐</span>
-                </div>
-                <div class="rating-item">
-                    <label data-i18n="speed">Скорость:</label>
-                    <input type="range" id="speed" min="1" max="5" value="3">
-                    <span class="rating-emoji">😐</span>
-                </div>
-                <div class="rating-item">
-                    <label data-i18n="accuracy">Правильность:</label>
-                    <input type="range" id="accuracy" min="1" max="5" value="3">
-                    <span class="rating-emoji">😐</span>
-                </div>
-                <button id="submit-rating" data-i18n="submitRating">Отправить</button>
-                <button id="rating-close" data-i18n="ratingClose">Закрыть</button>
-            </div>
-        </div>
-
-        <section class="task-input animate-pop-in">
+        <div class="project-defense hidden" data-i18n="projectDefense">Надеемся на зачёт!</div>
+        <section class="task-input">
             <h2 data-i18n="addTasks">Добавить задачи</h2>
             <div id="task-list"></div>
-            <button id="add-task-btn" data-i18n="addTaskButton">➕ Добавить задачу</button>
+            <button id="add-task-btn" class="tooltip" data-tooltip="addTaskButton">➕</button>
             <div class="time-input">
                 <label data-i18n="timeLabel">⏰ Доступное время:</label>
                 <input type="time" id="time-start" required>
                 <span>-</span>
                 <input type="time" id="time-end" required>
+                <span id="time-duration"></span>
             </div>
             <div class="ai-instructions">
                 <label data-i18n="aiInstructionsLabel">📝 Инструкции для ИИ:</label>
-                <textarea id="ai-instructions" data-i18n-placeholder="aiInstructionsPlaceholder" placeholder="Введите особые инструкции для ИИ (например, 'Учитывать перерывы каждые 2 часа')"></textarea>
+                <textarea id="ai-instructions" data-i18n-placeholder="aiInstructionsPlaceholder" placeholder="Введите особые инструкции для ИИ"></textarea>
             </div>
             <div class="submit-group">
-                <button id="submit-tasks" data-i18n="submitTasks">📅 Получить расписание</button>
-                <button id="warning-toggle" data-i18n="warningToggle">⚠️</button>
-                <button id="stats-btn" data-i18n="statsBtn">⭐</button>
+                <button id="submit-tasks" class="tooltip" data-tooltip="submitTasks">📅</button>
+                <button id="warning-toggle" class="tooltip" data-tooltip="warningToggle">⚠️</button>
             </div>
         </section>
 
-        <section class="result hidden animate-pop-in">
-            <h2 data-i18n="scheduleTitle" class="schedule-title hidden">Расписание и советы</h2>
-            <div id="schedule-output"></div>
+        <section class="result hidden">
+            <h2 class="schedule-title hidden" data-i18n="scheduleTitle">Расписание и советы</h2>
             <div id="animation-output" class="hidden"></div>
-            <p id="long-generation" class="hidden" data-i18n="longGeneration">⌛ Генерация занимает долгое время</p>
-            <p class="project-defense hidden" data-i18n="projectDefense">Надеемся на зачёт!</p>
+            <div id="schedule-output"></div>
+            <div id="long-generation" class="hidden" data-i18n="longGeneration">⌛ Генерация занимает долгое время</div>
             <div class="action-buttons">
-                <button id="save-schedule" data-i18n="saveSchedule">Сохранить</button>
-                <button id="try-again" data-i18n="tryAgain">Ещё раз</button>
+                <button id="save-schedule" class="tooltip" data-tooltip="saveSchedule">Сохранить</button>
+                <button id="try-again" class="tooltip" data-tooltip="tryAgain">Ещё раз</button>
             </div>
-            <button id="rate-btn" data-i18n="rateSchedule">Оценить</button>
         </section>
 
-        <section class="ad-banner animate-glow">
+        <div class="ad-banner">
             <a id="ad-link" href="https://t.me/By_RORlil" target="_blank">
-                <img id="ad-image" src="IMG_20250417_224058_243.jpg" alt="Реклама">
+                <img id="ad-image" src="IMG_20250417_224058_243.jpg" alt="Ad">
                 <p id="ad-text" data-i18n="adText">Посетите By ROlil Studio и попробуйте новые продукты!</p>
             </a>
-        </section>
+        </div>
     </main>
 
-    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.6.0/confetti.min.js" defer></script>
-    <script type="module" src="script.js" defer></script>
+    <div class="warning hidden">
+        <div class="warning-content">
+            <span class="warning-icon">⚠️</span>
+            <h2 data-i18n="warningTitle">Предупреждение</h2>
+            <p data-i18n="warningVpn">Для пользователей из РФ: используйте VPN-сервис для стабильной работы.</p>
+            <p data-i18n="warningAccuracy">ИИ может выдавать ошибочные ответы. Проверяйте результаты.</p>
+            <button id="warning-close" data-i18n="warningClose">Понятно</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script type="module" src="script.js"></script>
 </body>
 </html>

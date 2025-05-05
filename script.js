@@ -1,7 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-import { getDatabase, ref, get, push } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-database.js";
 
-// Конфигурация Firebase
+// Конфигурация Firebase (оставлена для возможного будущего использования)
 const firebaseConfig = {
     apiKey: "AIzaSyD8o7Qy-nbdliOLSLJugzJ6cTzleNa8q0o",
     authDomain: "aiplanner-31886.firebaseapp.com",
@@ -9,13 +8,11 @@ const firebaseConfig = {
     storageBucket: "aiplanner-31886.firebasestorage.app",
     messagingSenderId: "721297878184",
     appId: "1:721297878184:web:20d5281e3e2523a1a5a69d",
-    measurementId: "G-7EHQBR6M2B",
-    databaseURL: "https://aiplanner-31886-default-rtdb.firebaseio.com"
+    measurementId: "G-7EHQBR6M2B"
 };
 
 // Инициализация Firebase
 const app = initializeApp(firebaseConfig);
-const database = getDatabase(app);
 
 document.addEventListener('DOMContentLoaded', () => {
     // Локализация
@@ -54,17 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
             removeTask: "Удалить",
             saveSchedule: "Сохранить",
             tryAgain: "Ещё раз",
-            rateSchedule: "Оценить",
-            ratingTitle: "Оцените совет",
-            usefulness: "Полезность",
-            speed: "Скорость",
-            accuracy: "Правильность",
-            submitRating: "Отправить",
-            ratingClose: "Закрыть",
-            statsBtn: "⭐",
-            statsTitle: "Рейтинги",
-            statsCount: "Оценок: ",
-            statsClose: "Закрыть"
+            duplicateTask: "Дублировать"
         },
         en: {
             title: "AI Task Planner",
@@ -100,17 +87,7 @@ document.addEventListener('DOMContentLoaded', () => {
             removeTask: "Remove",
             saveSchedule: "Save",
             tryAgain: "Try Again",
-            rateSchedule: "Rate",
-            ratingTitle: "Rate the Advice",
-            usefulness: "Usefulness",
-            speed: "Speed",
-            accuracy: "Accuracy",
-            submitRating: "Submit",
-            ratingClose: "Close",
-            statsBtn: "⭐",
-            statsTitle: "Ratings",
-            statsCount: "Ratings: ",
-            statsClose: "Close"
+            duplicateTask: "Duplicate"
         }
     };
 
@@ -129,9 +106,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const addTaskBtn = document.getElementById('add-task-btn');
     const submitTasksBtn = document.getElementById('submit-tasks');
     const warningToggleBtn = document.getElementById('warning-toggle');
-    const statsBtn = document.getElementById('stats-btn');
     const timeStartInput = document.getElementById('time-start');
     const timeEndInput = document.getElementById('time-end');
+    const timeDuration = document.getElementById('time-duration');
     const aiInstructionsInput = document.getElementById('ai-instructions');
     const resultSection = document.querySelector('.result');
     const scheduleTitle = document.querySelector('.schedule-title');
@@ -150,12 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const projectDefenseText = document.querySelector('.project-defense');
     const saveScheduleBtn = document.getElementById('save-schedule');
     const tryAgainBtn = document.getElementById('try-again');
-    const rateBtn = document.getElementById('rate-btn');
-    const ratingWindow = document.querySelector('.rating-window');
-    const submitRatingBtn = document.getElementById('submit-rating');
-    const ratingCloseBtn = document.getElementById('rating-close');
-    const statsWindow = document.querySelector('.stats-window');
-    const statsCloseBtn = document.getElementById('stats-close');
 
     // Эффект печатания на фоне загрузки
     function startTypingEffect() {
@@ -226,18 +197,19 @@ document.addEventListener('DOMContentLoaded', () => {
     adText.textContent = adConfig.text;
 
     // Анимация баннера
-    const adAnimations = ['animate-glow', 'animate-rotate', 'animate-bounce'];
+    const adAnimations = ['animate-glow', 'animate-rotate', 'animate-pulse'];
     let currentAdAnimationIndex = 0;
     function switchAdAnimation() {
         adBanner.classList.remove(adAnimations[currentAdAnimationIndex]);
+        adImage.classList.remove(adAnimations[currentAdAnimationIndex]);
+        adText.classList.remove('animate-fade-slide');
         currentAdAnimationIndex = (currentAdAnimationIndex + 1) % adAnimations.length;
-        adBanner.classList.add(adAnimations[currentAdAnimationIndex]);
+        adImage.classList.add(adAnimations[currentAdAnimationIndex]);
+        adText.classList.add('animate-fade-slide');
     }
     adBanner.addEventListener('animationend', switchAdAnimation);
     setInterval(() => {
-        adBanner.classList.remove(adAnimations[currentAdAnimationIndex]);
-        currentAdAnimationIndex = (currentAdAnimationIndex + 1) % adAnimations.length;
-        adBanner.classList.add(adAnimations[currentAdAnimationIndex]);
+        switchAdAnimation();
     }, 10000);
     switchAdAnimation();
 
@@ -257,6 +229,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.classList.toggle('light-theme');
         themeSwitcher.textContent = isDark ? translations[localStorage.getItem('language') || 'ru'].themeToggle : '🌙';
         localStorage.setItem('theme', isDark ? 'light' : 'dark');
+        document.body.classList.add('fade');
+        setTimeout(() => document.body.classList.remove('fade'), 300);
     });
 
     // Смена языка
@@ -273,15 +247,18 @@ document.addEventListener('DOMContentLoaded', () => {
             const key = button.getAttribute('data-i18n');
             button.textContent = translations[lang][key] || translations['ru'][key];
         });
+        document.querySelectorAll('.tooltip').forEach(element => {
+            const key = element.getAttribute('data-tooltip');
+            element.setAttribute('data-tooltip-text', translations[lang][key] || translations['ru'][key]);
+        });
         document.title = translations[lang].title || translations['ru'].title;
         adText.textContent = translations[lang].adText;
         localStorage.setItem('language', lang);
         languageSwitchers.forEach(btn => {
             btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
         });
-        document.body.classList.add('language-transition');
-        setTimeout(() => document.body.classList.remove('language-transition'), 300);
-        updateStats();
+        document.body.classList.add('fade');
+        setTimeout(() => document.body.classList.remove('fade'), 300);
     }
 
     languageSwitchers.forEach(btn => {
@@ -291,31 +268,41 @@ document.addEventListener('DOMContentLoaded', () => {
     updateLanguage(savedLang);
 
     // Эффект гармошки для лого
+    let isAnimating = false;
     logoText.addEventListener('click', () => {
+        if (isAnimating) return;
+        isAnimating = true;
         const text = logoText.textContent;
         logoText.innerHTML = text.split('').map((char, i) => `<span class="logo-char" style="animation-delay: ${i * 0.1}s">${char}</span>`).join('');
         logoText.classList.add('shine');
         setTimeout(() => {
-            logoText.innerHTML = text;
-            logoText.classList.remove('shine');
-        }, 1500);
+            logoText.classList.add('fade-out');
+            setTimeout(() => {
+                logoText.innerHTML = text;
+                logoText.classList.remove('shine', 'fade-out');
+                isAnimating = false;
+            }, 300);
+        }, 1200);
     });
 
     // Добавить новую задачу
-    function addTask() {
+    function addTask(title = '', priority = 'средняя') {
         const taskEntry = document.createElement('div');
-        taskEntry.className = 'task-entry';
+        taskEntry.className = 'task-entry animate-slide-in';
+        taskEntry.setAttribute('draggable', 'true');
         taskEntry.innerHTML = `
-            <input type="text" class="task-title" data-i18n-placeholder="taskTitlePlaceholder" placeholder="${translations[savedLang].taskTitlePlaceholder}" required>
+            <input type="text" class="task-title" data-i18n-placeholder="taskTitlePlaceholder" placeholder="${translations[savedLang].taskTitlePlaceholder}" value="${title}" required>
             <div class="priority-buttons">
-                <button class="priority-btn" data-priority="низкая" data-i18n="lowPriority">${translations[savedLang].lowPriority}</button>
-                <button class="priority-btn active" data-priority="средняя" data-i18n="mediumPriority">${translations[savedLang].mediumPriority}</button>
-                <button class="priority-btn" data-priority="высокая" data-i18n="highPriority">${translations[savedLang].highPriority}</button>
+                <button class="priority-btn${priority === 'низкая' ? ' active' : ''}" data-priority="низкая" data-i18n="lowPriority">${translations[savedLang].lowPriority}</button>
+                <button class="priority-btn${priority === 'средняя' ? ' active' : ''}" data-priority="средняя" data-i18n="mediumPriority">${translations[savedLang].mediumPriority}</button>
+                <button class="priority-btn${priority === 'высокая' ? ' active' : ''}" data-priority="высокая" data-i18n="highPriority">${translations[savedLang].highPriority}</button>
             </div>
             <button class="remove-task-btn" title="${translations[savedLang].removeTask}">🗑️</button>
         `;
         taskList.appendChild(taskEntry);
         attachPriorityListeners(taskEntry);
+        attachDragListeners(taskEntry);
+        taskEntry.querySelector('.task-title').focus();
     }
 
     // Инициализация первой задачи
@@ -328,18 +315,89 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.addEventListener('click', () => {
                 buttons.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
+                btn.classList.add('pop');
+                setTimeout(() => btn.classList.remove('pop'), 200);
             });
         });
     }
 
-    // Удаление задачи
-    taskList.addEventListener('click', (e) => {
-        if (e.target.classList.contains('remove-task-btn')) {
-            e.target.parentElement.remove();
+    // Drag-and-drop для задач
+    function attachDragListeners(taskEntry) {
+        taskEntry.addEventListener('dragstart', (e) => {
+            e.target.classList.add('dragging');
+            e.dataTransfer.setData('text/plain', '');
+        });
+        taskEntry.addEventListener('dragend', (e) => {
+            e.target.classList.remove('dragging');
+        });
+        taskEntry.addEventListener('dragover', (e) => {
+            e.preventDefault();
+        });
+        taskEntry.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const dragging = document.querySelector('.dragging');
+            if (dragging && dragging !== taskEntry) {
+                const allEntries = Array.from(taskList.children);
+                const fromIndex = allEntries.indexOf(dragging);
+                const toIndex = allEntries.indexOf(taskEntry);
+                if (fromIndex < toIndex) {
+                    taskList.insertBefore(dragging, taskEntry.nextSibling);
+                } else {
+                    taskList.insertBefore(dragging, taskEntry);
+                }
+                dragging.classList.add('animate-slide-in');
+                setTimeout(() => dragging.classList.remove('animate-slide-in'), 300);
+            }
+        });
+    }
+
+    // Контекстное меню
+    taskList.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        if (e.target.closest('.task-entry')) {
+            const taskEntry = e.target.closest('.task-entry');
+            const contextMenu = document.createElement('div');
+            contextMenu.className = 'context-menu';
+            contextMenu.innerHTML = `
+                <div class="context-menu-item" data-action="remove">${translations[savedLang].removeTask}</div>
+                <div class="context-menu-item" data-action="duplicate">${translations[savedLang].duplicateTask}</div>
+            `;
+            document.body.appendChild(contextMenu);
+            contextMenu.style.top = `${e.pageY}px`;
+            contextMenu.style.left = `${e.pageX}px`;
+            contextMenu.classList.add('animate-pop-in');
+
+            const removeMenu = () => {
+                contextMenu.classList.add('animate-fade-out');
+                setTimeout(() => contextMenu.remove(), 200);
+            };
+
+            contextMenu.addEventListener('click', (event) => {
+                const action = event.target.getAttribute('data-action');
+                if (action === 'remove') {
+                    taskEntry.classList.add('animate-slide-out');
+                    setTimeout(() => taskEntry.remove(), 300);
+                } else if (action === 'duplicate') {
+                    const title = taskEntry.querySelector('.task-title').value;
+                    const priority = taskEntry.querySelector('.priority-btn.active').getAttribute('data-priority');
+                    addTask(title, priority);
+                }
+                removeMenu();
+            });
+
+            document.addEventListener('click', removeMenu, { once: true });
         }
     });
 
-    // Валидация времени
+    // Удаление задачи
+    taskList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-task-btn')) {
+            e.target.parentElement.classList.add('animate-slide-out');
+            setTimeout(() => e.target.parentElement.remove(), 300);
+        }
+    });
+
+    // Валидация времени и предпросмотр длительности
     function validateTimeRange(start, end, lang) {
         if (!start || !end) {
             return { valid: false, error: translations[lang].errorTimeFormat };
@@ -352,14 +410,40 @@ document.addEventListener('DOMContentLoaded', () => {
         return { valid: true };
     }
 
+    function updateTimeDuration() {
+        const start = timeStartInput.value;
+        const end = timeEndInput.value;
+        if (start && end) {
+            const startTime = new Date(`1970-01-01T${start}:00`);
+            const endTime = new Date(`1970-01-01T${end}:00`);
+            const diffMs = endTime - startTime;
+            const hours = Math.floor(diffMs / 3600000);
+            const minutes = Math.floor((diffMs % 3600000) / 60000);
+            const lang = localStorage.getItem('language') || 'ru';
+            timeDuration.textContent = lang === 'ru' ? `${hours} ч ${minutes} мин` : `${hours} h ${minutes} min`;
+            timeDuration.classList.add('animate-pop-in');
+            setTimeout(() => timeDuration.classList.remove('animate-pop-in'), 500);
+        } else {
+            timeDuration.textContent = '';
+        }
+    }
+
+    timeStartInput.addEventListener('input', updateTimeDuration);
+    timeEndInput.addEventListener('input', updateTimeDuration);
+
     // Кнопка предупреждения
     warningToggleBtn.addEventListener('click', () => {
         warningSection.classList.remove('hidden');
+        warningSection.classList.add('animate-pop-in');
     });
 
     // Закрытие предупреждения
     warningCloseBtn.addEventListener('click', () => {
-        warningSection.classList.add('hidden');
+        warningSection.classList.add('animate-fade-out');
+        setTimeout(() => {
+            warningSection.classList.add('hidden');
+            warningSection.classList.remove('animate-fade-out');
+        }, 200);
     });
 
     // Сохранение расписания
@@ -371,106 +455,43 @@ document.addEventListener('DOMContentLoaded', () => {
         link.download = translations[savedLang].scheduleTitle + '.txt';
         link.click();
         URL.revokeObjectURL(link.href);
+        saveScheduleBtn.classList.add('pop');
+        setTimeout(() => saveScheduleBtn.classList.remove('pop'), 200);
     });
 
     // Сброс интерфейса
     tryAgainBtn.addEventListener('click', () => {
-        resultSection.classList.add('hidden');
-        taskInput.classList.remove('hidden');
-        taskList.innerHTML = '';
-        addTask();
-        timeStartInput.value = '';
-        timeEndInput.value = '';
-        aiInstructionsInput.value = '';
-        scheduleOutput.textContent = '';
-        scheduleTitle.classList.add('hidden');
-        resultSection.style.transform = 'translateY(0)';
-        taskInput.style.opacity = '1';
-        taskInput.style.transform = 'scale(1)';
+        resultSection.classList.add('animate-fade-out');
+        setTimeout(() => {
+            resultSection.classList.add('hidden');
+            taskInput.classList.remove('hidden');
+            adBanner.style.transform = 'translateY(0)';
+            taskList.innerHTML = '';
+            addTask();
+            timeStartInput.value = '';
+            timeEndInput.value = '';
+            aiInstructionsInput.value = '';
+            scheduleOutput.textContent = '';
+            scheduleTitle.classList.add('hidden');
+            resultSection.style.transform = 'translateY(0)';
+            taskInput.style.opacity = '1';
+            taskInput.style.transform = 'scale(1)';
+            resultSection.classList.remove('animate-fade-out');
+            taskInput.classList.add('animate-pop-in');
+            setTimeout(() => taskInput.classList.remove('animate-pop-in'), 500);
+        }, 200);
+        tryAgainBtn.classList.add('pop');
+        setTimeout(() => tryAgainBtn.classList.remove('pop'), 200);
     });
 
-    // Оценка
-    const emojis = ['😭', '😢', '😐', '🙂', '🤩'];
-    function updateEmoji(input, emojiElement) {
-        const value = parseInt(input.value);
-        emojiElement.textContent = emojis[value - 1];
-        emojiElement.classList.add('pop-in');
-        setTimeout(() => emojiElement.classList.remove('pop-in'), 500);
-    }
-
-    document.querySelectorAll('.rating-item input[type="range"]').forEach(input => {
-        const emojiElement = input.nextElementSibling;
-        updateEmoji(input, emojiElement);
-        input.addEventListener('input', () => updateEmoji(input, emojiElement));
-    });
-
-    rateBtn.addEventListener('click', () => {
-        ratingWindow.classList.remove('hidden');
-    });
-
-    submitRatingBtn.addEventListener('click', async () => {
-        const usefulness = parseInt(document.getElementById('usefulness').value);
-        const speed = parseInt(document.getElementById('speed').value);
-        const accuracy = parseInt(document.getElementById('accuracy').value);
-        try {
-            await push(ref(database, 'ratings'), {
-                usefulness,
-                speed,
-                accuracy,
-                timestamp: Date.now()
-            });
-            ratingWindow.classList.add('hidden');
-            updateStats();
-        } catch (error) {
-            console.error('Ошибка записи оценки:', error);
+    // Клавиатурная навигация
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && document.activeElement.classList.contains('task-title')) {
+            addTask();
+        } else if (e.key === 'Enter' && document.activeElement === submitTasksBtn) {
+            submitTasksBtn.click();
         }
     });
-
-    ratingCloseBtn.addEventListener('click', () => {
-        ratingWindow.classList.add('hidden');
-    });
-
-    // Статистика
-    statsBtn.addEventListener('click', () => {
-        statsWindow.classList.remove('hidden');
-        updateStats();
-    });
-
-    statsCloseBtn.addEventListener('click', () => {
-        statsWindow.classList.add('hidden');
-    });
-
-    async function updateStats() {
-        try {
-            const snapshot = await get(ref(database, 'ratings'));
-            if (snapshot.exists()) {
-                const ratings = snapshot.val();
-                const ratingsArray = Object.values(ratings);
-                const count = ratingsArray.length;
-                const avgUsefulness = (ratingsArray.reduce((sum, r) => sum + r.usefulness, 0) / count).toFixed(1);
-                const avgSpeed = (ratingsArray.reduce((sum, r) => sum + r.speed, 0) / count).toFixed(1);
-                const avgAccuracy = (ratingsArray.reduce((sum, r) => sum + r.accuracy, 0) / count).toFixed(1);
-
-                document.getElementById('stats-count').textContent = translations[savedLang].statsCount + count;
-                document.getElementById('usefulness-score').textContent = avgUsefulness;
-                document.getElementById('speed-score').textContent = avgSpeed;
-                document.getElementById('accuracy-score').textContent = avgAccuracy;
-                document.getElementById('usefulness-progress').style.width = `${(avgUsefulness / 5) * 100}%`;
-                document.getElementById('speed-progress').style.width = `${(avgSpeed / 5) * 100}%`;
-                document.getElementById('accuracy-progress').style.width = `${(avgAccuracy / 5) * 100}%`;
-            } else {
-                document.getElementById('stats-count').textContent = translations[savedLang].statsCount + '0';
-                document.getElementById('usefulness-score').textContent = '0.0';
-                document.getElementById('speed-score').textContent = '0.0';
-                document.getElementById('accuracy-score').textContent = '0.0';
-                document.getElementById('usefulness-progress').style.width = '0%';
-                document.getElementById('speed-progress').style.width = '0%';
-                document.getElementById('accuracy-progress').style.width = '0%';
-            }
-        } catch (error) {
-            console.error('Ошибка чтения статистики:', error);
-        }
-    }
 
     // Отправка задач к API
     submitTasksBtn.addEventListener('click', async () => {
@@ -479,6 +500,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Показ предупреждения при первой генерации
         if (!localStorage.getItem('warningShown')) {
             warningSection.classList.remove('hidden');
+            warningSection.classList.add('animate-pop-in');
             localStorage.setItem('warningShown', 'true');
             return;
         }
@@ -508,21 +530,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // Показ загрузки
-        taskInput.style.opacity = '0';
-        taskInput.style.transform = 'scale(0.8)';
-        setTimeout(() => {
-            taskInput.classList.add('hidden');
-            resultSection.classList.remove('hidden');
-            resultSection.style.transform = 'translateY(-100px)';
-            scheduleOutput.classList.add('blur');
-            animationOutput.classList.remove('hidden');
-            animationOutput.innerHTML = '<div class="loading"><span>.</span><span>.</span><span>.</span></div>';
-        }, 300);
+        scheduleOutput.classList.add('blur');
+        animationOutput.classList.remove('hidden');
+        animationOutput.innerHTML = '<div class="loading"><span>.</span><span>.</span><span>.</span></div>';
 
         // Таймер долгой генерации
         const longGenerationTimeout = setTimeout(() => {
             longGenerationText.classList.remove('hidden');
-            resultSection.classList.add('stretch');
+            resultSection.classList.add('animate-expand');
         }, 15000);
 
         // Улучшенный промпт
@@ -577,7 +592,7 @@ Tip: Focus on high-priority tasks in the morning.`;
 
             clearTimeout(longGenerationTimeout);
             longGenerationText.classList.add('hidden');
-            resultSection.classList.remove('stretch');
+            resultSection.classList.remove('animate-expand');
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -586,20 +601,28 @@ Tip: Focus on high-priority tasks in the morning.`;
             const data = await response.json();
             const schedule = data.candidates[0].content.parts[0].text;
 
-            // Успешная анимация с растяжением
+            // Успешная анимация с перемещением
             animationOutput.innerHTML = '<div class="success">✅</div>';
             setTimeout(() => {
-                scheduleOutput.classList.remove('blur');
-                animationOutput.classList.add('hidden');
-                scheduleOutput.textContent = schedule;
-                scheduleTitle.classList.remove('hidden');
-                resultSection.classList.add('stretch');
-                setTimeout(() => resultSection.classList.remove('stretch'), 500);
+                taskInput.style.opacity = '0';
+                taskInput.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    taskInput.classList.add('hidden');
+                    resultSection.classList.remove('hidden');
+                    resultSection.classList.add('animate-expand');
+                    resultSection.style.transform = 'translateY(-100px)';
+                    adBanner.style.transform = 'translateY(-100px)';
+                    scheduleOutput.classList.remove('blur');
+                    animationOutput.classList.add('hidden');
+                    scheduleOutput.textContent = schedule;
+                    scheduleTitle.classList.remove('hidden');
+                    setTimeout(() => resultSection.classList.remove('animate-expand'), 500);
+                }, 300);
             }, 1000);
         } catch (error) {
             clearTimeout(longGenerationTimeout);
             longGenerationText.classList.add('hidden');
-            resultSection.classList.remove('stretch');
+            resultSection.classList.remove('animate-expand');
 
             let errorMessage, errorSource, errorDetails;
 
@@ -616,26 +639,40 @@ Tip: Focus on high-priority tasks in the morning.`;
             }
 
             setTimeout(() => {
-                scheduleOutput.classList.remove('blur');
-                animationOutput.classList.add('hidden');
-                scheduleOutput.textContent = lang === 'en' ? `
+                taskInput.style.opacity = '0';
+                taskInput.style.transform = 'scale(0.8)';
+                setTimeout(() => {
+                    taskInput.classList.add('hidden');
+                    resultSection.classList.remove('hidden');
+                    resultSection.classList.add('animate-expand');
+                    resultSection.style.transform = 'translateY(-100px)';
+                    adBanner.style.transform = 'translateY(-100px)';
+                    scheduleOutput.classList.remove('blur');
+                    animationOutput.classList.add('hidden');
+                    scheduleOutput.textContent = lang === 'en' ? `
 Error:
 - Source: ${errorSource}
 - Message: ${errorMessage}
 - Details: ${errorDetails}
-                ` : `
+                    ` : `
 Ошибка:
 - Источник: ${errorSource}
 - Сообщение: ${errorMessage}
 - Детали: ${errorDetails}
-                `;
-                scheduleTitle.classList.remove('hidden');
-                resultSection.classList.add('stretch');
-                setTimeout(() => resultSection.classList.remove('stretch'), 500);
+                    `;
+                    scheduleTitle.classList.remove('hidden');
+                    setTimeout(() => resultSection.classList.remove('animate-expand'), 500);
+                }, 300);
             }, 1000);
         }
+        submitTasksBtn.classList.add('pop');
+        setTimeout(() => submitTasksBtn.classList.remove('pop'), 200);
     });
 
     // Добавление задачи
-    addTaskBtn.addEventListener('click', addTask);
+    addTaskBtn.addEventListener('click', () => {
+        addTask();
+        addTaskBtn.classList.add('pop');
+        setTimeout(() => addTaskBtn.classList.remove('pop'), 200);
+    });
 });
