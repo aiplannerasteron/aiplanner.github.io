@@ -1,0 +1,128 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="title">ИИ-Планировщик задач</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Roboto:wght@400&family=Inter:wght@500&display=swap" rel="stylesheet">
+</head>
+<body class="light-theme">
+    <div class="loading-screen">
+        <div class="loading-content">
+            <div class="loading"><span>.</span><span>.</span><span>.</span></div>
+            <p id="long-loading" class="hidden" data-i18n="longLoading">Загрузка занимает больше времени...</p>
+        </div>
+        <div class="typing-effect"></div>
+    </div>
+
+    <header>
+        <div class="logo">
+            <span class="logo-text" data-i18n="appName">ИИ-Планировщик</span>
+        </div>
+        <nav>
+            <button id="language-switcher" data-lang="ru" data-i18n="langRussian">🇷🇺</button>
+            <button id="language-switcher" data-lang="en" data-i18n="langEnglish">🇺🇸</button>
+            <button id="theme-switcher" data-i18n="themeToggle">☀️</button>
+        </nav>
+    </header>
+
+    <main>
+        <div class="warning hidden">
+            <div class="warning-content">
+                <span class="warning-icon">⚠️</span>
+                <div class="warning-text">
+                    <h2 data-i18n="warningTitle">Предупреждение</h2>
+                    <p data-i18n="warningVpn">Для пользователей из РФ: используйте VPN-сервис для стабильной работы.</p>
+                    <p data-i18n="warningAccuracy">ИИ может выдавать ошибочные ответы. Проверяйте результаты.</p>
+                    <button id="warning-close" data-i18n="warningClose">Понятно</button>
+                </div>
+            </div>
+        </div>
+
+        <section class="task-input animate-pop-in">
+            <h2 data-i18n="addTasks">Добавить задачи</h2>
+            <div id="task-list"></div>
+            <button id="add-task-btn" data-i18n="addTaskButton">➕ Добавить задачу</button>
+            <div class="time-input">
+                <label data-i18n="timeLabel">⏰ Доступное время:</label>
+                <input type="time" id="time-start" required>
+                <span>-</span>
+                <input type="time" id="time-end" required>
+            </div>
+            <div class="ai-instructions">
+                <label data-i18n="aiInstructionsLabel">📝 Инструкции для ИИ:</label>
+                <textarea id="ai-instructions" data-i18n-placeholder="aiInstructionsPlaceholder" placeholder="Введите особые инструкции для ИИ (например, 'Учитывать перерывы каждые 2 часа')"></textarea>
+            </div>
+            <div class="submit-group">
+                <button id="submit-tasks" data-i18n="submitTasks">📅 Получить расписание</button>
+                <button id="warning-toggle" data-i18n="warningToggle">⚠️</button>
+            </div>
+        </section>
+
+        <section class="result hidden animate-pop-in">
+            <h2 data-i18n="scheduleTitle" class="schedule-title hidden">Расписание и советы</h2>
+            <div id="schedule-output"></div>
+            <div id="animation-output" class="hidden"></div>
+            <p id="long-generation" class="hidden" data-i18n="longGeneration">⌛ Генерация занимает долгое время</p>
+            <p class="project-defense hidden" data-i18n="projectDefense">Надеемся на зачёт!</p>
+        </section>
+
+        <section class="ad-banner animate-slide-in">
+            <a id="ad-link" href="https://t.me/By_RORlil" target="_blank">
+                <img id="ad-image" src="IMG_20250417_224058_243.jpg" alt="Реклама">
+                <p id="ad-text" data-i18n="adText">Посетите By ROlil Studio и попробуйте новые продукты!</p>
+            </a>
+        </section>
+
+        <div class="demo-toggle hidden">
+            <button id="mode-toggle" data-i18n="toggleDemo">Включить демонстрационный режим</button>
+        </div>
+
+        <div class="mode-notification hidden" data-i18n="modeSwitched">Режим переключен</div>
+    </main>
+
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" defer></script>
+    <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/canvas-confetti/1.6.0/confetti.min.js" defer></script>
+    <script type="text/javascript" src="script.js" defer></script>
+</body>
+</html>
