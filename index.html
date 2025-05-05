@@ -63,6 +63,8 @@
             <button id="language-switcher" data-lang="ru" data-i18n="langRussian">🇷🇺</button>
             <button id="language-switcher" data-lang="en" data-i18n="langEnglish">🇺🇸</button>
             <button id="theme-switcher" data-i18n="themeToggle">☀️</button>
+            <button id="confetti-toggle" class="special-btn hidden">🎉</button>
+            <button id="defense-text-toggle" class="special-btn hidden">📝</button>
         </nav>
     </header>
 
@@ -71,7 +73,11 @@
         <section class="task-input">
             <h2 data-i18n="addTasks">Добавить задачи</h2>
             <div id="task-list"></div>
-            <button id="add-task-btn" class="tooltip" data-tooltip="addTaskButton">➕</button>
+            <div class="task-controls">
+                <button id="add-task-btn">➕</button>
+                <button id="shuffle-tasks">🔃</button>
+                <button id="unpack-tasks" class="hidden">🔙</button>
+            </div>
             <div class="time-input">
                 <label data-i18n="timeLabel">⏰ Доступное время:</label>
                 <input type="time" id="time-start" required>
@@ -84,8 +90,8 @@
                 <textarea id="ai-instructions" data-i18n-placeholder="aiInstructionsPlaceholder" placeholder="Введите особые инструкции для ИИ"></textarea>
             </div>
             <div class="submit-group">
-                <button id="submit-tasks" class="tooltip" data-tooltip="submitTasks">📅</button>
-                <button id="warning-toggle" class="tooltip" data-tooltip="warningToggle">⚠️</button>
+                <button id="submit-tasks">📅</button>
+                <button id="warning-toggle">⚠️</button>
             </div>
         </section>
 
@@ -95,8 +101,8 @@
             <div id="schedule-output"></div>
             <div id="long-generation" class="hidden" data-i18n="longGeneration">⌛ Генерация занимает долгое время</div>
             <div class="action-buttons">
-                <button id="save-schedule" class="tooltip" data-tooltip="saveSchedule">Сохранить</button>
-                <button id="try-again" class="tooltip" data-tooltip="tryAgain">Ещё раз</button>
+                <button id="save-schedule">Сохранить</button>
+                <button id="try-again">Ещё раз</button>
             </div>
         </section>
 

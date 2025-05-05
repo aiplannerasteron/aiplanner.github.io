@@ -1,19 +1,3 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-
-// Конфигурация Firebase (оставлена для возможного будущего использования)
-const firebaseConfig = {
-    apiKey: "AIzaSyD8o7Qy-nbdliOLSLJugzJ6cTzleNa8q0o",
-    authDomain: "aiplanner-31886.firebaseapp.com",
-    projectId: "aiplanner-31886",
-    storageBucket: "aiplanner-31886.firebasestorage.app",
-    messagingSenderId: "721297878184",
-    appId: "1:721297878184:web:20d5281e3e2523a1a5a69d",
-    measurementId: "G-7EHQBR6M2B"
-};
-
-// Инициализация Firebase
-const app = initializeApp(firebaseConfig);
-
 document.addEventListener('DOMContentLoaded', () => {
     // Локализация
     const translations = {
@@ -104,6 +88,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const taskInput = document.querySelector('.task-input');
     const taskList = document.getElementById('task-list');
     const addTaskBtn = document.getElementById('add-task-btn');
+    const shuffleTasksBtn = document.getElementById('shuffle-tasks');
+    const unpackTasksBtn = document.getElementById('unpack-tasks');
     const submitTasksBtn = document.getElementById('submit-tasks');
     const warningToggleBtn = document.getElementById('warning-toggle');
     const timeStartInput = document.getElementById('time-start');
@@ -117,6 +103,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const longGenerationText = document.getElementById('long-generation');
     const languageSwitchers = document.querySelectorAll('#language-switcher');
     const themeSwitcher = document.getElementById('theme-switcher');
+    const confettiToggle = document.getElementById('confetti-toggle');
+    const defenseTextToggle = document.getElementById('defense-text-toggle');
     const adBanner = document.querySelector('.ad-banner');
     const adLink = document.getElementById('ad-link');
     const adImage = document.getElementById('ad-image');
@@ -160,11 +148,24 @@ document.addEventListener('DOMContentLoaded', () => {
         loadingScreen.classList.add('hidden');
     }, 2000);
 
-    // Проверка даты для эффекта 6 мая 2025
+    // Проверка даты для 6 мая 2025
     const today = new Date();
     const isProjectDefenseDay = today.getFullYear() === 2025 && today.getMonth() === 4 && today.getDate() === 6;
+    let confettiInterval = null;
+    let isConfettiActive = isProjectDefenseDay;
+    let isDefenseTextActive = isProjectDefenseDay;
+
     if (isProjectDefenseDay) {
         projectDefenseText.classList.remove('hidden');
+        confettiToggle.classList.remove('hidden');
+        defenseTextToggle.classList.remove('hidden');
+        confettiToggle.classList.add('active');
+        defenseTextToggle.classList.add('active');
+        startConfetti();
+    }
+
+    function startConfetti() {
+        if (confettiInterval) return;
         try {
             confetti({
                 particleCount: 100,
@@ -175,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 gravity: 0.5,
                 scalar: 1.2
             });
-            setInterval(() => {
+            confettiInterval = setInterval(() => {
                 confetti({
                     particleCount: 50,
                     spread: 50,
@@ -187,9 +188,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
             }, 3000);
         } catch (e) {
-            console.error('Ошибка загрузки эффекта фейерверков:', e);
+            console.error('Ошибка загрузки эффекта конфетти:', e);
         }
     }
+
+    function stopConfetti() {
+        if (confettiInterval) {
+            clearInterval(confettiInterval);
+            confettiInterval = null;
+        }
+    }
+
+    confettiToggle.addEventListener('click', () => {
+        isConfettiActive = !isConfettiActive;
+        confettiToggle.classList.toggle('active', isConfettiActive);
+        if (isConfettiActive) {
+            startConfetti();
+        } else {
+            stopConfetti();
+        }
+    });
+
+    defenseTextToggle.addEventListener('click', () => {
+        isDefenseTextActive = !isDefenseTextActive;
+        defenseTextToggle.classList.toggle('active', isDefenseTextActive);
+        projectDefenseText.classList.toggle('hidden', !isDefenseTextActive);
+    });
 
     // Установка баннера
     adLink.href = adConfig.url;
@@ -200,14 +224,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const adAnimations = ['animate-glow', 'animate-rotate', 'animate-pulse'];
     let currentAdAnimationIndex = 0;
     function switchAdAnimation() {
-        adBanner.classList.remove(adAnimations[currentAdAnimationIndex]);
         adImage.classList.remove(adAnimations[currentAdAnimationIndex]);
         adText.classList.remove('animate-fade-slide');
         currentAdAnimationIndex = (currentAdAnimationIndex + 1) % adAnimations.length;
         adImage.classList.add(adAnimations[currentAdAnimationIndex]);
         adText.classList.add('animate-fade-slide');
     }
-    adBanner.addEventListener('animationend', switchAdAnimation);
+    adImage.addEventListener('animationend', switchAdAnimation);
     setInterval(() => {
         switchAdAnimation();
     }, 10000);
@@ -247,10 +270,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const key = button.getAttribute('data-i18n');
             button.textContent = translations[lang][key] || translations['ru'][key];
         });
-        document.querySelectorAll('.tooltip').forEach(element => {
-            const key = element.getAttribute('data-tooltip');
-            element.setAttribute('data-tooltip-text', translations[lang][key] || translations['ru'][key]);
-        });
         document.title = translations[lang].title || translations['ru'].title;
         adText.textContent = translations[lang].adText;
         localStorage.setItem('language', lang);
@@ -275,21 +294,25 @@ document.addEventListener('DOMContentLoaded', () => {
         const text = logoText.textContent;
         logoText.innerHTML = text.split('').map((char, i) => `<span class="logo-char" style="animation-delay: ${i * 0.1}s">${char}</span>`).join('');
         logoText.classList.add('shine');
-        setTimeout(() => {
+        const chars = logoText.querySelectorAll('.logo-char');
+        chars[chars.length - 1].addEventListener('animationend', () => {
             logoText.classList.add('fade-out');
             setTimeout(() => {
                 logoText.innerHTML = text;
                 logoText.classList.remove('shine', 'fade-out');
-                isAnimating = false;
+                logoText.classList.add('fade-in');
+                setTimeout(() => {
+                    logoText.classList.remove('fade-in');
+                    isAnimating = false;
+                }, 300);
             }, 300);
-        }, 1200);
+        }, { once: true });
     });
 
     // Добавить новую задачу
     function addTask(title = '', priority = 'средняя') {
         const taskEntry = document.createElement('div');
         taskEntry.className = 'task-entry animate-slide-in';
-        taskEntry.setAttribute('draggable', 'true');
         taskEntry.innerHTML = `
             <input type="text" class="task-title" data-i18n-placeholder="taskTitlePlaceholder" placeholder="${translations[savedLang].taskTitlePlaceholder}" value="${title}" required>
             <div class="priority-buttons">
@@ -297,12 +320,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button class="priority-btn${priority === 'средняя' ? ' active' : ''}" data-priority="средняя" data-i18n="mediumPriority">${translations[savedLang].mediumPriority}</button>
                 <button class="priority-btn${priority === 'высокая' ? ' active' : ''}" data-priority="высокая" data-i18n="highPriority">${translations[savedLang].highPriority}</button>
             </div>
+            <button class="pack-task-btn">📦</button>
             <button class="remove-task-btn" title="${translations[savedLang].removeTask}">🗑️</button>
         `;
         taskList.appendChild(taskEntry);
         attachPriorityListeners(taskEntry);
-        attachDragListeners(taskEntry);
+        attachPackListeners(taskEntry);
         taskEntry.querySelector('.task-title').focus();
+        updateTaskNumbers();
     }
 
     // Инициализация первой задачи
@@ -321,35 +346,101 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Drag-and-drop для задач
-    function attachDragListeners(taskEntry) {
-        taskEntry.addEventListener('dragstart', (e) => {
+    // Упаковка задачи
+    function attachPackListeners(taskEntry) {
+        const packBtn = taskEntry.querySelector('.pack-task-btn');
+        packBtn.addEventListener('click', () => {
+            const title = taskEntry.querySelector('.task-title').value;
+            const priority = taskEntry.querySelector('.priority-btn.active').getAttribute('data-priority');
+            taskEntry.classList.add('animate-slide-out');
+            setTimeout(() => {
+                taskEntry.remove();
+                const taskIcon = document.createElement('div');
+                taskIcon.className = 'task-icon animate-slide-in';
+                taskIcon.setAttribute('draggable', 'true');
+                taskIcon.dataset.title = title;
+                taskIcon.dataset.priority = priority;
+                const taskNumber = Array.from(taskList.children).length + 1;
+                taskIcon.textContent = `📋 №${taskNumber}`;
+                taskList.appendChild(taskIcon);
+                attachDragListeners(taskIcon);
+                updateTaskNumbers();
+                unpackTasksBtn.classList.remove('hidden');
+            }, 300);
+        });
+    }
+
+    // Drag-and-drop для иконок задач
+    function attachDragListeners(taskIcon) {
+        taskIcon.addEventListener('dragstart', (e) => {
             e.target.classList.add('dragging');
             e.dataTransfer.setData('text/plain', '');
         });
-        taskEntry.addEventListener('dragend', (e) => {
+        taskIcon.addEventListener('dragend', (e) => {
             e.target.classList.remove('dragging');
+            updateTaskNumbers();
         });
-        taskEntry.addEventListener('dragover', (e) => {
+        taskIcon.addEventListener('dragover', (e) => {
             e.preventDefault();
         });
-        taskEntry.addEventListener('drop', (e) => {
+        taskIcon.addEventListener('drop', (e) => {
             e.preventDefault();
             const dragging = document.querySelector('.dragging');
-            if (dragging && dragging !== taskEntry) {
-                const allEntries = Array.from(taskList.children);
-                const fromIndex = allEntries.indexOf(dragging);
-                const toIndex = allEntries.indexOf(taskEntry);
+            if (dragging && dragging !== taskIcon) {
+                const allIcons = Array.from(taskList.children);
+                const fromIndex = allIcons.indexOf(dragging);
+                const toIndex = allIcons.indexOf(taskIcon);
                 if (fromIndex < toIndex) {
-                    taskList.insertBefore(dragging, taskEntry.nextSibling);
+                    taskList.insertBefore(dragging, taskIcon.nextSibling);
                 } else {
-                    taskList.insertBefore(dragging, taskEntry);
+                    taskList.insertBefore(dragging, taskIcon);
                 }
                 dragging.classList.add('animate-slide-in');
                 setTimeout(() => dragging.classList.remove('animate-slide-in'), 300);
+                updateTaskNumbers();
             }
         });
     }
+
+    // Обновление номеров задач
+    function updateTaskNumbers() {
+        const icons = taskList.querySelectorAll('.task-icon');
+        icons.forEach((icon, index) => {
+            icon.textContent = `📋 №${index + 1}`;
+        });
+        unpackTasksBtn.classList.toggle('hidden', icons.length === 0);
+    }
+
+    // Распаковка всех задач
+    unpackTasksBtn.addEventListener('click', () => {
+        const icons = Array.from(taskList.querySelectorAll('.task-icon'));
+        icons.forEach(icon => {
+            icon.classList.add('animate-slide-out');
+        });
+        setTimeout(() => {
+            icons.forEach(icon => {
+                const title = icon.dataset.title;
+                const priority = icon.dataset.priority;
+                icon.remove();
+                addTask(title, priority);
+            });
+            updateTaskNumbers();
+        }, 300);
+    });
+
+    // Перемешивание задач
+    shuffleTasksBtn.addEventListener('click', () => {
+        const tasks = Array.from(taskList.children);
+        for (let i = tasks.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            taskList.insertBefore(tasks[j], tasks[i + 1]);
+        }
+        tasks.forEach(task => {
+            task.classList.add('animate-slide-in');
+            setTimeout(() => task.classList.remove('animate-slide-in'), 300);
+        });
+        updateTaskNumbers();
+    });
 
     // Контекстное меню
     taskList.addEventListener('contextmenu', (e) => {
@@ -363,8 +454,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 <div class="context-menu-item" data-action="duplicate">${translations[savedLang].duplicateTask}</div>
             `;
             document.body.appendChild(contextMenu);
-            contextMenu.style.top = `${e.pageY}px`;
-            contextMenu.style.left = `${e.pageX}px`;
+            const x = e.pageX;
+            const y = e.pageY;
+            const menuWidth = 150;
+            const menuHeight = 80;
+            contextMenu.style.top = `${Math.min(y, window.innerHeight - menuHeight)}px`;
+            contextMenu.style.left = `${Math.min(x, window.innerWidth - menuWidth)}px`;
             contextMenu.classList.add('animate-pop-in');
 
             const removeMenu = () => {
@@ -394,6 +489,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.classList.contains('remove-task-btn')) {
             e.target.parentElement.classList.add('animate-slide-out');
             setTimeout(() => e.target.parentElement.remove(), 300);
+            updateTaskNumbers();
         }
     });
 
@@ -484,15 +580,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => tryAgainBtn.classList.remove('pop'), 200);
     });
 
-    // Клавиатурная навигация
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && document.activeElement.classList.contains('task-title')) {
-            addTask();
-        } else if (e.key === 'Enter' && document.activeElement === submitTasksBtn) {
-            submitTasksBtn.click();
-        }
-    });
-
     // Отправка задач к API
     submitTasksBtn.addEventListener('click', async () => {
         const lang = localStorage.getItem('language') || 'ru';
@@ -505,12 +592,19 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const tasks = Array.from(taskList.querySelectorAll('.task-entry')).map(entry => {
-            const activePriority = entry.querySelector('.priority-btn.active');
-            return {
-                title: entry.querySelector('.task-title').value.trim(),
-                priority: activePriority ? activePriority.getAttribute('data-priority') : 'средняя'
-            };
+        const tasks = Array.from(taskList.children).map((entry, index) => {
+            if (entry.classList.contains('task-entry')) {
+                const activePriority = entry.querySelector('.priority-btn.active');
+                return {
+                    title: entry.querySelector('.task-title').value.trim(),
+                    priority: activePriority ? activePriority.getAttribute('data-priority') : 'средняя'
+                };
+            } else {
+                return {
+                    title: entry.dataset.title,
+                    priority: entry.dataset.priority
+                };
+            }
         });
         const startTime = timeStartInput.value;
         const endTime = timeEndInput.value;
