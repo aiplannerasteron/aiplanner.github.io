@@ -1,0 +1,293 @@
+document.addEventListener('DOMContentLoaded', () => {
+    // Локализация
+    const translations = {
+        ru: {
+            title: "ИИ-Планировщик задач",
+            appName: "ИИ-Планировщик",
+            addTasks: "Добавить задачи",
+            taskTitlePlaceholder: "Название задачи",
+            lowPriority: "Низкая",
+            mediumPriority: "Средняя",
+            highPriority: "Высокая",
+            addTaskButton: "➕ Добавить задачу",
+            timeLabel: "⏰ Доступное время:",
+            submitTasks: "📅 Получить расписание",
+            scheduleTitle: "Расписание и советы",
+            errorEmptyTasks: "Заполните все поля задач!",
+            errorTimeFormat: "Укажите корректное время!",
+            errorApi: "Ошибка при получении расписания. Попробуйте позже.",
+            errorInvalidTime: "Некорректное время. Конец должен быть позже начала.",
+            errorVpn: "Ошибка API (400). Для пользователей из РФ: включите VPN."
+        },
+        en: {
+            title: "AI Task Planner",
+            appName: "AI Planner",
+            addTasks: "Add Tasks",
+            taskTitlePlaceholder: "Task Title",
+            lowPriority: "Low",
+            mediumPriority: "Medium",
+            highPriority: "High",
+            addTaskButton: "➕ Add Task",
+            timeLabel: "⏰ Available Time:",
+            submitTasks: "📅 Get Schedule",
+            scheduleTitle: "Schedule and Tips",
+            errorEmptyTasks: "Fill in all task fields!",
+            errorTimeFormat: "Specify a valid time!",
+            errorApi: "Error fetching schedule. Try again later.",
+            errorInvalidTime: "Invalid time. End time must be after start time.",
+            errorVpn: "API Error (400). For users in Russia: enable VPN."
+        }
+    };
+
+    // Настройки рекламного баннера
+    const adConfig = {
+        text: "Посетите By ROlil Studio и попробуйте новые продукты!",
+        url: "https://t.me/By_RORlil",
+        imageUrl: "IMG_20250417_224058_243.jpg"
+    };
+
+    const taskList = document.getElementById('task-list');
+    const addTaskBtn = document.getElementById('add-task-btn');
+    const submitTasksBtn = document.getElementById('submit-tasks');
+    const timeStartInput = document.getElementById('time-start');
+    const timeEndInput = document.getElementById('time-end');
+    const aiInstructionsInput = document.getElementById('ai-instructions');
+    const resultSection = document.querySelector('.result');
+    const scheduleOutput = document.getElementById('schedule-output');
+    const animationOutput = document.getElementById('animation-output');
+    const languageSwitchers = document.querySelectorAll('#language-switcher');
+    const themeSwitcher = document.getElementById('theme-switcher');
+    const adLink = document.getElementById('ad-link');
+    const adImage = document.getElementById('ad-image');
+    const adText = document.getElementById('ad-text');
+    const warningSection = document.querySelector('.warning');
+    const warningCloseBtn = document.getElementById('warning-close');
+
+    // Установка баннера
+    adLink.href = adConfig.url;
+    adImage.src = adConfig.imageUrl;
+    adText.textContent = adConfig.text;
+
+    // Переключ Sekcja: Переключение темы
+    themeSwitcher.addEventListener('click', () => {
+        const isDark = document.body.classList.contains('dark-theme');
+        document.body.classList.toggle('dark-theme');
+        document.body.classList.toggle('light-theme');
+        themeSwitcher.textContent = isDark ? '☀️' : '🌙';
+        localStorage.setItem('theme', isDark ? 'light' : 'dark');
+    });
+
+    // Загрузка сохраненной темы
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.body.classList.add(`${savedTheme}-theme`);
+    themeSwitcher.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+
+    // Смена языка
+    function updateLanguage(lang) {
+        document.querySelectorAll('[data-i18n]').forEach(element => {
+            const key = element.getAttribute('data-i18n');
+            element.textContent = translations[lang][key] || translations['ru'][key];
+        });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(element => {
+            const key = element.getAttribute('data-i18n-placeholder');
+            element.placeholder = translations[lang][key] || translations['ru'][key];
+        });
+        document.querySelectorAll('.priority-btn[data-i18n]').forEach(button => {
+            const key = button.getAttribute('data-i18n');
+            button.textContent = translations[lang][key] || translations['ru'][key];
+        });
+        document.title = translations[lang].title || translations['ru'].title;
+        localStorage.setItem('language', lang);
+        languageSwitchers.forEach(btn => {
+            btn.classList.toggle('active', btn.getAttribute('data-lang') === lang);
+        });
+        document.body.classList.add('language-transition');
+        setTimeout(() => document.body.classList.remove('language-transition'), 300);
+    }
+
+    languageSwitchers.forEach(btn => {
+        btn.addEventListener('click', () => updateLanguage(btn.getAttribute('data-lang')));
+    });
+
+    // Загрузка сохраненного языка
+    const savedLang = localStorage.getItem('language') || 'ru';
+    updateLanguage(savedLang);
+
+    // Добавить новую задачу
+    addTaskBtn.addEventListener('click', () => {
+        const taskEntry = document.createElement('div');
+        taskEntry.className = 'task-entry';
+        taskEntry.innerHTML = `
+            <input type="text" class="task-title" data-i18n-placeholder="taskTitlePlaceholder" placeholder="${translations[savedLang].taskTitlePlaceholder}" required>
+            <div class="priority-buttons">
+                <button class="priority-btn" data-priority="низкая" data-i18n="lowPriority">${translations[savedLang].lowPriority}</button>
+                <button class="priority-btn" data-priority="средняя" data-i18n="mediumPriority">${translations[savedLang].mediumPriority}</button>
+                <button class="priority-btn" data-priority="высокая" data-i18n="highPriority">${translations[savedLang].highPriority}</button>
+            </div>
+            <button class="remove-task-btn" title="Удалить">🗑️</button>
+        `;
+        taskList.appendChild(taskEntry);
+        attachPriorityListeners(taskEntry);
+    });
+
+    // Привязка обработчиков для кнопок приоритета
+    function attachPriorityListeners(taskEntry) {
+        const buttons = taskEntry.querySelectorAll('.priority-btn');
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                buttons.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+    }
+
+    // Инициализация обработчиков для первой задачи
+    attachPriorityListeners(taskList.querySelector('.task-entry'));
+
+    // Удаление задачи
+    taskList.addEventListener('click', (e) => {
+        if (e.target.classList.contains('remove-task-btn')) {
+            e.target.parentElement.remove();
+        }
+    });
+
+    // Валидация времени
+    function validateTimeRange(start, end, lang) {
+        if (!start || !end) {
+            return { valid: false, error: translations[lang].errorTimeFormat };
+        }
+        const startTime = new Date(`1970-01-01T${start}:00`);
+        const endTime = new Date(`1970-01-01T${end}:00`);
+        if (startTime >= endTime) {
+            return { valid: false, error: translations[lang].errorInvalidTime };
+        }
+        return { valid: true };
+    }
+
+    // Закрытие предупреждения
+    warningCloseBtn.addEventListener('click', () => {
+        warningSection.classList.add('hidden');
+    });
+
+    // Отправка задач к API
+    submitTasksBtn.addEventListener('click', async () => {
+        const lang = localStorage.getItem('language') || 'ru';
+
+        // Показ предупреждения при первой генерации
+        if (!localStorage.getItem('warningShown')) {
+            warningSection.classList.remove('hidden');
+            localStorage.setItem('warningShown', 'true');
+            return;
+        }
+
+        const tasks = Array.from(taskList.querySelectorAll('.task-entry')).map(entry => {
+            const activePriority = entry.querySelector('.priority-btn.active');
+            return {
+                title: entry.querySelector('.task-title').value.trim(),
+                priority: activePriority ? activePriority.getAttribute('data-priority') : 'средняя'
+            };
+        });
+        const startTime = timeStartInput.value;
+        const endTime = timeEndInput.value;
+        const aiInstructions = aiInstructionsInput.value.trim();
+
+        // Валидация задач
+        if (!tasks.every(task => task.title)) {
+            alert(translations[lang].errorEmptyTasks);
+            return;
+        }
+
+        // Валидация времени
+        const timeValidation = validateTimeRange(startTime, endTime, lang);
+        if (!timeValidation.valid) {
+            alert(timeValidation.error);
+            return;
+        }
+
+        // Показ загрузки
+        resultSection.classList.remove('hidden');
+        scheduleOutput.classList.add('blur');
+        animationOutput.classList.remove('hidden');
+        animationOutput.innerHTML = '<div class="loading"><span>.</span><span>.</span><span>.</span></div>';
+
+        // Формирование запроса
+        const taskListText = tasks.map((task, i) => `- ${task.title} (Важность: ${task.priority})`).join('\n');
+        let prompt = `Ты — ИИ-планировщик задач. У меня есть следующие задачи:
+${taskListText}
+Доступное время: ${startTime} - ${endTime}.
+${aiInstructions ? `Инструкции: ${aiInstructions}` : ''}
+Распредели задачи по времени и дай совет, как лучше их выполнить.
+Сделай ответ кратким и структурированным. Без форматирования. Пиши исключительно обычным текстом не используя Markdown или любое другое форматирование. Совет дай в стиле того, какая основная масса задач.`;
+
+        if (lang === 'en') {
+            prompt = `You are an AI task planner. I have the following tasks:
+${taskListText}
+Available time: ${startTime} - ${endTime}.
+${aiInstructions ? `Instructions: ${aiInstructions}` : ''}
+Schedule the tasks by time and provide advice on how to complete them efficiently.
+Keep the response concise and structured. Don't use text formatting. No markdown and every formatting. Just plain text. Give advice at tasks style`;
+        }
+
+        try {
+            const apiKey = "AIzaSyCUtheYwMYUhwkTjT5avcSGwetGXFqF-f0";
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [{
+                            text: prompt
+                        }]
+                    }]
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const schedule = data.candidates[0].content.parts[0].text;
+
+            // Успешная анимация
+            animationOutput.innerHTML = '<div class="success">✔</div>';
+            setTimeout(() => {
+                scheduleOutput.classList.remove('blur');
+                animationOutput.classList.add('hidden');
+                scheduleOutput.textContent = schedule;
+            }, 1000);
+        } catch (error) {
+            let errorMessage, errorSource, errorDetails;
+
+            if (error.message.includes('400')) {
+                errorMessage = translations[lang].errorVpn;
+                errorSource = lang === 'en' ? 'API Access' : 'Доступ к API';
+                errorDetails = lang === 'en' ? 'API request failed. For users in Russia, please enable VPN.' : 'Запрос к API не выполнен. Для пользователей из РФ включите VPN.';
+                animationOutput.innerHTML = '<div class="error">❌</div>';
+            } else {
+                errorMessage = translations[lang].errorApi;
+                errorSource = lang === 'en' ? 'Unknown API Error' : 'Неизвестная ошибка API';
+                errorDetails = error.message;
+                animationOutput.innerHTML = '<div class="error">❌</div>';
+            }
+
+            setTimeout(() => {
+                scheduleOutput.classList.remove('blur');
+                animationOutput.classList.add('hidden');
+                scheduleOutput.textContent = lang === 'en' ? `
+Error:
+- Source: ${errorSource}
+- Message: ${errorMessage}
+- Details: ${errorDetails}
+                ` : `
+Ошибка:
+- Источник: ${errorSource}
+- Сообщение: ${errorMessage}
+- Детали: ${errorDetails}
+                `;
+            }, 1000);
+        }
+    });
+});
