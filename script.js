@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', () => {
             lowPriority: "Низкая",
             mediumPriority: "Средняя",
             highPriority: "Высокая",
-            addTaskButton: "➕ Добавить задачу",
             timeLabel: "⏰ Доступное время:",
             aiInstructionsLabel: "📝 Инструкции для ИИ:",
             aiInstructionsPlaceholder: "Введите особые инструкции для ИИ (например, 'Учитывать перерывы каждые 2 часа')",
@@ -26,7 +25,8 @@ document.addEventListener('DOMContentLoaded', () => {
             warningClose: "Понятно",
             warningToggle: "⚠️",
             longGeneration: "⌛ Генерация занимает долгое время",
-            longLoading: "Загрузка занимает больше времени...",
+            loading: "Загрузка...",
+            specialLoading: "День защиты проекта!",
             adText: "Посетите By ROlil Studio и попробуйте новые продукты!",
             langRussian: "🇷🇺",
             langEnglish: "🇺🇸",
@@ -45,7 +45,6 @@ document.addEventListener('DOMContentLoaded', () => {
             lowPriority: "Low",
             mediumPriority: "Medium",
             highPriority: "High",
-            addTaskButton: "➕ Add Task",
             timeLabel: "⏰ Available Time:",
             aiInstructionsLabel: "📝 AI Instructions:",
             aiInstructionsPlaceholder: "Enter specific instructions for the AI (e.g., 'Account for breaks every 2 hours')",
@@ -62,7 +61,8 @@ document.addEventListener('DOMContentLoaded', () => {
             warningClose: "Understood",
             warningToggle: "⚠️",
             longGeneration: "⌛ Generation is taking a long time",
-            longLoading: "Loading is taking longer...",
+            loading: "Loading...",
+            specialLoading: "Project Defense Day!",
             adText: "Visit By ROlil Studio and try new products!",
             langRussian: "🇷🇺",
             langEnglish: "🇺🇸",
@@ -83,13 +83,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const loadingScreen = document.querySelector('.loading-screen');
-    const longLoadingText = document.getElementById('long-loading');
-    const typingEffect = document.querySelector('.typing-effect');
+    const specialLoadingScreen = document.querySelector('.special-loading-screen');
     const taskInput = document.querySelector('.task-input');
     const taskList = document.getElementById('task-list');
     const addTaskBtn = document.getElementById('add-task-btn');
     const shuffleTasksBtn = document.getElementById('shuffle-tasks');
-    const unpackTasksBtn = document.getElementById('unpack-tasks');
     const submitTasksBtn = document.getElementById('submit-tasks');
     const warningToggleBtn = document.getElementById('warning-toggle');
     const timeStartInput = document.getElementById('time-start');
@@ -97,6 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const timeDuration = document.getElementById('time-duration');
     const aiInstructionsInput = document.getElementById('ai-instructions');
     const resultSection = document.querySelector('.result');
+    const resultCloseBtn = document.getElementById('result-close');
     const scheduleTitle = document.querySelector('.schedule-title');
     const scheduleOutput = document.getElementById('schedule-output');
     const animationOutput = document.getElementById('animation-output');
@@ -115,53 +114,82 @@ document.addEventListener('DOMContentLoaded', () => {
     const projectDefenseText = document.querySelector('.project-defense');
     const saveScheduleBtn = document.getElementById('save-schedule');
     const tryAgainBtn = document.getElementById('try-again');
-
-    // Эффект печатания на фоне загрузки
-    function startTypingEffect() {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 ';
-        let text = '';
-        const maxLength = 500;
-        const typingInterval = setInterval(() => {
-            if (text.length < maxLength) {
-                text += chars[Math.floor(Math.random() * chars.length)];
-                if (Math.random() < 0.2) text += ' ';
-                typingEffect.textContent = text;
-            } else {
-                text = text.slice(-maxLength + 50);
-                typingEffect.textContent = text;
-            }
-        }, 50);
-        return typingInterval;
-    }
+    const actionButtons = document.querySelector('.action-buttons');
 
     // Инициализация загрузки
-    const typingInterval = startTypingEffect();
-    const longLoadingTimeout = setTimeout(() => {
-        longLoadingText.classList.remove('hidden');
-        loadingScreen.querySelector('.loading-content').classList.add('blink');
-    }, 5000);
-
-    // Скрытие экрана загрузки
-    setTimeout(() => {
-        clearInterval(typingInterval);
-        clearTimeout(longLoadingTimeout);
-        loadingScreen.classList.add('hidden');
-    }, 2000);
-
-    // Проверка даты для 6 мая 2025
     const today = new Date();
     const isProjectDefenseDay = today.getFullYear() === 2025 && today.getMonth() === 4 && today.getDate() === 6;
     let confettiInterval = null;
     let isConfettiActive = isProjectDefenseDay;
     let isDefenseTextActive = isProjectDefenseDay;
 
+    function startSpecialLoading() {
+        const canvas = document.getElementById('special-loading-canvas');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        const ctx = canvas.getContext('2d');
+        const particles = [];
+        for (let i = 0; i < 50; i++) {
+            particles.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 5 + 2,
+                speedX: Math.random() * 2 - 1,
+                speedY: Math.random() * 2 - 1,
+                type: Math.random() > 0.5 ? 'star' : 'circle'
+            });
+        }
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => {
+                p.x += p.speedX;
+                p.y += p.speedY;
+                if (p.x < 0 || p.x > canvas.width) p.speedX *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.speedY *= -1;
+                ctx.fillStyle = Math.random() > 0.5 ? '#ffd700' : '#007bff';
+                if (p.type === 'star') {
+                    ctx.beginPath();
+                    ctx.moveTo(p.x, p.y - p.size);
+                    for (let i = 0; i < 5; i++) {
+                        ctx.lineTo(
+                            p.x + Math.cos((18 + i * 72) * Math.PI / 180) * p.size,
+                            p.y + Math.sin((18 + i * 72) * Math.PI / 180) * p.size
+                        );
+                        ctx.lineTo(
+                            p.x + Math.cos((54 + i * 72) * Math.PI / 180) * (p.size / 2),
+                            p.y + Math.sin((54 + i * 72) * Math.PI / 180) * (p.size / 2)
+                        );
+                    }
+                    ctx.closePath();
+                    ctx.fill();
+                } else {
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            });
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+    }
+
     if (isProjectDefenseDay) {
+        loadingScreen.classList.add('hidden');
+        specialLoadingScreen.classList.remove('hidden');
+        startSpecialLoading();
         projectDefenseText.classList.remove('hidden');
         confettiToggle.classList.remove('hidden');
         defenseTextToggle.classList.remove('hidden');
         confettiToggle.classList.add('active');
         defenseTextToggle.classList.add('active');
         startConfetti();
+        setTimeout(() => {
+            specialLoadingScreen.classList.add('hidden');
+        }, 3000);
+    } else {
+        setTimeout(() => {
+            loadingScreen.classList.add('hidden');
+        }, 2000);
     }
 
     function startConfetti() {
@@ -231,9 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         adText.classList.add('animate-fade-slide');
     }
     adImage.addEventListener('animationend', switchAdAnimation);
-    setInterval(() => {
-        switchAdAnimation();
-    }, 10000);
+    setInterval(switchAdAnimation, 10000);
     switchAdAnimation();
 
     // Инициализация кнопок
@@ -278,6 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         document.body.classList.add('fade');
         setTimeout(() => document.body.classList.remove('fade'), 300);
+        updateTimeDuration();
     }
 
     languageSwitchers.forEach(btn => {
@@ -296,16 +323,9 @@ document.addEventListener('DOMContentLoaded', () => {
         logoText.classList.add('shine');
         const chars = logoText.querySelectorAll('.logo-char');
         chars[chars.length - 1].addEventListener('animationend', () => {
-            logoText.classList.add('fade-out');
-            setTimeout(() => {
-                logoText.innerHTML = text;
-                logoText.classList.remove('shine', 'fade-out');
-                logoText.classList.add('fade-in');
-                setTimeout(() => {
-                    logoText.classList.remove('fade-in');
-                    isAnimating = false;
-                }, 300);
-            }, 300);
+            logoText.innerHTML = text;
+            logoText.classList.remove('shine');
+            isAnimating = false;
         }, { once: true });
     });
 
@@ -313,6 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function addTask(title = '', priority = 'средняя') {
         const taskEntry = document.createElement('div');
         taskEntry.className = 'task-entry animate-slide-in';
+        taskEntry.setAttribute('draggable', 'true');
         taskEntry.innerHTML = `
             <input type="text" class="task-title" data-i18n-placeholder="taskTitlePlaceholder" placeholder="${translations[savedLang].taskTitlePlaceholder}" value="${title}" required>
             <div class="priority-buttons">
@@ -320,14 +341,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 <button class="priority-btn${priority === 'средняя' ? ' active' : ''}" data-priority="средняя" data-i18n="mediumPriority">${translations[savedLang].mediumPriority}</button>
                 <button class="priority-btn${priority === 'высокая' ? ' active' : ''}" data-priority="высокая" data-i18n="highPriority">${translations[savedLang].highPriority}</button>
             </div>
-            <button class="pack-task-btn">📦</button>
             <button class="remove-task-btn" title="${translations[savedLang].removeTask}">🗑️</button>
         `;
         taskList.appendChild(taskEntry);
         attachPriorityListeners(taskEntry);
-        attachPackListeners(taskEntry);
-        taskEntry.querySelector('.task-title').focus();
-        updateTaskNumbers();
+        attachDragListeners(taskEntry);
+        const taskTitle = taskEntry.querySelector('.task-title');
+        taskTitle.focus();
     }
 
     // Инициализация первой задачи
@@ -346,87 +366,35 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Упаковка задачи
-    function attachPackListeners(taskEntry) {
-        const packBtn = taskEntry.querySelector('.pack-task-btn');
-        packBtn.addEventListener('click', () => {
-            const title = taskEntry.querySelector('.task-title').value;
-            const priority = taskEntry.querySelector('.priority-btn.active').getAttribute('data-priority');
-            taskEntry.classList.add('animate-slide-out');
-            setTimeout(() => {
-                taskEntry.remove();
-                const taskIcon = document.createElement('div');
-                taskIcon.className = 'task-icon animate-slide-in';
-                taskIcon.setAttribute('draggable', 'true');
-                taskIcon.dataset.title = title;
-                taskIcon.dataset.priority = priority;
-                const taskNumber = Array.from(taskList.children).length + 1;
-                taskIcon.textContent = `📋 №${taskNumber}`;
-                taskList.appendChild(taskIcon);
-                attachDragListeners(taskIcon);
-                updateTaskNumbers();
-                unpackTasksBtn.classList.remove('hidden');
-            }, 300);
-        });
-    }
-
-    // Drag-and-drop для иконок задач
-    function attachDragListeners(taskIcon) {
-        taskIcon.addEventListener('dragstart', (e) => {
+    // Drag-and-drop для задач
+    function attachDragListeners(taskEntry) {
+        taskEntry.addEventListener('dragstart', (e) => {
             e.target.classList.add('dragging');
             e.dataTransfer.setData('text/plain', '');
         });
-        taskIcon.addEventListener('dragend', (e) => {
+        taskEntry.addEventListener('dragend', (e) => {
             e.target.classList.remove('dragging');
-            updateTaskNumbers();
         });
-        taskIcon.addEventListener('dragover', (e) => {
+        taskEntry.addEventListener('dragover', (e) => {
             e.preventDefault();
         });
-        taskIcon.addEventListener('drop', (e) => {
+        taskEntry.addEventListener('drop', (e) => {
             e.preventDefault();
             const dragging = document.querySelector('.dragging');
-            if (dragging && dragging !== taskIcon) {
-                const allIcons = Array.from(taskList.children);
-                const fromIndex = allIcons.indexOf(dragging);
-                const toIndex = allIcons.indexOf(taskIcon);
+            if (dragging && dragging !== taskEntry) {
+                const allTasks = Array.from(taskList.children);
+                const fromIndex = allTasks.indexOf(dragging);
+                const toIndex = allTasks.indexOf(taskEntry);
                 if (fromIndex < toIndex) {
-                    taskList.insertBefore(dragging, taskIcon.nextSibling);
+                    taskList.insertBefore(dragging, taskEntry.nextSibling);
                 } else {
-                    taskList.insertBefore(dragging, taskIcon);
+                    taskList.insertBefore(dragging, taskEntry);
                 }
                 dragging.classList.add('animate-slide-in');
                 setTimeout(() => dragging.classList.remove('animate-slide-in'), 300);
-                updateTaskNumbers();
             }
         });
     }
-
-    // Обновление номеров задач
-    function updateTaskNumbers() {
-        const icons = taskList.querySelectorAll('.task-icon');
-        icons.forEach((icon, index) => {
-            icon.textContent = `📋 №${index + 1}`;
-        });
-        unpackTasksBtn.classList.toggle('hidden', icons.length === 0);
-    }
-
-    // Распаковка всех задач
-    unpackTasksBtn.addEventListener('click', () => {
-        const icons = Array.from(taskList.querySelectorAll('.task-icon'));
-        icons.forEach(icon => {
-            icon.classList.add('animate-slide-out');
-        });
-        setTimeout(() => {
-            icons.forEach(icon => {
-                const title = icon.dataset.title;
-                const priority = icon.dataset.priority;
-                icon.remove();
-                addTask(title, priority);
-            });
-            updateTaskNumbers();
-        }, 300);
-    });
 
     // Перемешивание задач
     shuffleTasksBtn.addEventListener('click', () => {
@@ -439,7 +407,6 @@ document.addEventListener('DOMContentLoaded', () => {
             task.classList.add('animate-slide-in');
             setTimeout(() => task.classList.remove('animate-slide-in'), 300);
         });
-        updateTaskNumbers();
     });
 
     // Контекстное меню
@@ -489,7 +456,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.classList.contains('remove-task-btn')) {
             e.target.parentElement.classList.add('animate-slide-out');
             setTimeout(() => e.target.parentElement.remove(), 300);
-            updateTaskNumbers();
         }
     });
 
@@ -509,13 +475,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function updateTimeDuration() {
         const start = timeStartInput.value;
         const end = timeEndInput.value;
+        const lang = localStorage.getItem('language') || 'ru';
         if (start && end) {
             const startTime = new Date(`1970-01-01T${start}:00`);
             const endTime = new Date(`1970-01-01T${end}:00`);
             const diffMs = endTime - startTime;
             const hours = Math.floor(diffMs / 3600000);
             const minutes = Math.floor((diffMs % 3600000) / 60000);
-            const lang = localStorage.getItem('language') || 'ru';
             timeDuration.textContent = lang === 'ru' ? `${hours} ч ${minutes} мин` : `${hours} h ${minutes} min`;
             timeDuration.classList.add('animate-pop-in');
             setTimeout(() => timeDuration.classList.remove('animate-pop-in'), 500);
@@ -534,12 +500,32 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Закрытие предупреждения
-    warningCloseBtn.addEventListener('click', () => {
+    warningCloseBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
         warningSection.classList.add('animate-fade-out');
         setTimeout(() => {
             warningSection.classList.add('hidden');
             warningSection.classList.remove('animate-fade-out');
         }, 200);
+    });
+
+    // Закрытие окна результата
+    resultCloseBtn.addEventListener('click', () => {
+        resultSection.classList.add('animate-fade-out');
+        setTimeout(() => {
+            resultSection.classList.add('hidden');
+            resultSection.classList.remove('animate-fade-out');
+            actionButtons.classList.add('hidden');
+            taskInput.classList.remove('hidden');
+            taskInput.classList.add('animate-pop-in');
+            setTimeout(() => taskInput.classList.remove('animate-pop-in'), 500);
+        }, 200);
+    });
+
+    resultSection.addEventListener('click', (e) => {
+        if (e.target === resultSection) {
+            resultCloseBtn.click();
+        }
     });
 
     // Сохранение расписания
@@ -560,8 +546,8 @@ document.addEventListener('DOMContentLoaded', () => {
         resultSection.classList.add('animate-fade-out');
         setTimeout(() => {
             resultSection.classList.add('hidden');
+            actionButtons.classList.add('hidden');
             taskInput.classList.remove('hidden');
-            adBanner.style.transform = 'translateY(0)';
             taskList.innerHTML = '';
             addTask();
             timeStartInput.value = '';
@@ -569,9 +555,6 @@ document.addEventListener('DOMContentLoaded', () => {
             aiInstructionsInput.value = '';
             scheduleOutput.textContent = '';
             scheduleTitle.classList.add('hidden');
-            resultSection.style.transform = 'translateY(0)';
-            taskInput.style.opacity = '1';
-            taskInput.style.transform = 'scale(1)';
             resultSection.classList.remove('animate-fade-out');
             taskInput.classList.add('animate-pop-in');
             setTimeout(() => taskInput.classList.remove('animate-pop-in'), 500);
@@ -581,7 +564,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // Отправка задач к API
+    let isSubmitting = false;
     submitTasksBtn.addEventListener('click', async () => {
+        if (isSubmitting) return;
+        isSubmitting = true;
+
         const lang = localStorage.getItem('language') || 'ru';
 
         // Показ предупреждения при первой генерации
@@ -589,22 +576,16 @@ document.addEventListener('DOMContentLoaded', () => {
             warningSection.classList.remove('hidden');
             warningSection.classList.add('animate-pop-in');
             localStorage.setItem('warningShown', 'true');
+            isSubmitting = false;
             return;
         }
 
         const tasks = Array.from(taskList.children).map((entry, index) => {
-            if (entry.classList.contains('task-entry')) {
-                const activePriority = entry.querySelector('.priority-btn.active');
-                return {
-                    title: entry.querySelector('.task-title').value.trim(),
-                    priority: activePriority ? activePriority.getAttribute('data-priority') : 'средняя'
-                };
-            } else {
-                return {
-                    title: entry.dataset.title,
-                    priority: entry.dataset.priority
-                };
-            }
+            const activePriority = entry.querySelector('.priority-btn.active');
+            return {
+                title: entry.querySelector('.task-title').value.trim(),
+                priority: activePriority ? activePriority.getAttribute('data-priority') : 'средняя'
+            };
         });
         const startTime = timeStartInput.value;
         const endTime = timeEndInput.value;
@@ -613,6 +594,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Валидация задач
         if (!tasks.every(task => task.title)) {
             alert(translations[lang].errorEmptyTasks);
+            isSubmitting = false;
             return;
         }
 
@@ -620,6 +602,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const timeValidation = validateTimeRange(startTime, endTime, lang);
         if (!timeValidation.valid) {
             alert(timeValidation.error);
+            isSubmitting = false;
             return;
         }
 
@@ -695,76 +678,74 @@ Tip: Focus on high-priority tasks in the morning.`;
             const data = await response.json();
             const schedule = data.candidates[0].content.parts[0].text;
 
-            // Успешная анимация с перемещением
+            // Успешная анимация
             animationOutput.innerHTML = '<div class="success">✅</div>';
             setTimeout(() => {
-                taskInput.style.opacity = '0';
-                taskInput.style.transform = 'scale(0.8)';
-                setTimeout(() => {
-                    taskInput.classList.add('hidden');
-                    resultSection.classList.remove('hidden');
-                    resultSection.classList.add('animate-expand');
-                    resultSection.style.transform = 'translateY(-100px)';
-                    adBanner.style.transform = 'translateY(-100px)';
-                    scheduleOutput.classList.remove('blur');
-                    animationOutput.classList.add('hidden');
-                    scheduleOutput.textContent = schedule;
-                    scheduleTitle.classList.remove('hidden');
-                    setTimeout(() => resultSection.classList.remove('animate-expand'), 500);
-                }, 300);
+                taskInput.classList.add('hidden');
+                resultSection.classList.remove('hidden');
+                actionButtons.classList.remove('hidden');
+                resultSection.classList.add('animate-pop-in');
+                scheduleOutput.classList.remove('blur');
+                animationOutput.classList.add('hidden');
+                scheduleOutput.textContent = schedule;
+                scheduleTitle.classList.remove('hidden');
+                setTimeout(() => resultSection.classList.remove('animate-pop-in'), 500);
             }, 1000);
         } catch (error) {
             clearTimeout(longGenerationTimeout);
             longGenerationText.classList.add('hidden');
             resultSection.classList.remove('animate-expand');
 
-            let errorMessage, errorSource, errorDetails;
+            let errorMessage, errorSource, errorDetails, animationClass;
 
             if (error.message.includes('400')) {
                 errorMessage = translations[lang].errorVpn;
                 errorSource = lang === 'en' ? 'API Access' : 'Доступ к API';
                 errorDetails = lang === 'en' ? 'API request failed. For users in Russia, please enable VPN.' : 'Запрос к API не выполнен. Для пользователей из РФ включите VPN.';
-                animationOutput.innerHTML = '<div class="error">❌</div>';
+                animationClass = 'vpn-error';
+                animationOutput.innerHTML = '<div class="vpn-error">⚠️</div>';
             } else {
                 errorMessage = translations[lang].errorApi;
                 errorSource = lang === 'en' ? 'Unknown API Error' : 'Неизвестная ошибка API';
                 errorDetails = error.message;
+                animationClass = 'error';
                 animationOutput.innerHTML = '<div class="error">❌</div>';
             }
 
             setTimeout(() => {
-                taskInput.style.opacity = '0';
-                taskInput.style.transform = 'scale(0.8)';
-                setTimeout(() => {
-                    taskInput.classList.add('hidden');
-                    resultSection.classList.remove('hidden');
-                    resultSection.classList.add('animate-expand');
-                    resultSection.style.transform = 'translateY(-100px)';
-                    adBanner.style.transform = 'translateY(-100px)';
-                    scheduleOutput.classList.remove('blur');
-                    animationOutput.classList.add('hidden');
-                    scheduleOutput.textContent = lang === 'en' ? `
+                taskInput.classList.add('hidden');
+                resultSection.classList.remove('hidden');
+                actionButtons.classList.remove('hidden');
+                resultSection.classList.add('animate-pop-in');
+                scheduleOutput.classList.remove('blur');
+                animationOutput.classList.add('hidden');
+                scheduleOutput.textContent = lang === 'en' ? `
 Error:
 - Source: ${errorSource}
 - Message: ${errorMessage}
 - Details: ${errorDetails}
-                    ` : `
+                ` : `
 Ошибка:
 - Источник: ${errorSource}
 - Сообщение: ${errorMessage}
 - Детали: ${errorDetails}
-                    `;
-                    scheduleTitle.classList.remove('hidden');
-                    setTimeout(() => resultSection.classList.remove('animate-expand'), 500);
-                }, 300);
+                `;
+                scheduleTitle.classList.remove('hidden');
+                setTimeout(() => resultSection.classList.remove('animate-pop-in'), 500);
             }, 1000);
+        } finally {
+            isSubmitting = false;
         }
         submitTasksBtn.classList.add('pop');
         setTimeout(() => submitTasksBtn.classList.remove('pop'), 200);
     });
 
     // Добавление задачи
+    let lastAddTaskTime = 0;
     addTaskBtn.addEventListener('click', () => {
+        const now = Date.now();
+        if (now - lastAddTaskTime < 500) return; // Защита от двойных кликов
+        lastAddTaskTime = now;
         addTask();
         addTaskBtn.classList.add('pop');
         setTimeout(() => addTaskBtn.classList.remove('pop'), 200);

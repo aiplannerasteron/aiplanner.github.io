@@ -49,10 +49,15 @@
 <body class="light-theme">
     <div class="loading-screen">
         <div class="loading-content">
-            <div class="loading"><span>.</span><span>.</span><span>.</span></div>
-            <div id="long-loading" class="hidden" data-i18n="longLoading">Загрузка занимает больше времени...</div>
+            <div class="loading-circle"></div>
+            <div class="loading-text" data-i18n="loading">Загрузка...</div>
         </div>
-        <div class="typing-effect"></div>
+    </div>
+    <div class="special-loading-screen hidden">
+        <div class="special-loading-content">
+            <canvas id="special-loading-canvas"></canvas>
+            <div class="special-loading-text" data-i18n="specialLoading">День защиты проекта!</div>
+        </div>
     </div>
 
     <header>
@@ -76,7 +81,6 @@
             <div class="task-controls">
                 <button id="add-task-btn">➕</button>
                 <button id="shuffle-tasks">🔃</button>
-                <button id="unpack-tasks" class="hidden">🔙</button>
             </div>
             <div class="time-input">
                 <label data-i18n="timeLabel">⏰ Доступное время:</label>
@@ -96,15 +100,16 @@
         </section>
 
         <section class="result hidden">
+            <button id="result-close">✖️</button>
             <h2 class="schedule-title hidden" data-i18n="scheduleTitle">Расписание и советы</h2>
             <div id="animation-output" class="hidden"></div>
             <div id="schedule-output"></div>
             <div id="long-generation" class="hidden" data-i18n="longGeneration">⌛ Генерация занимает долгое время</div>
-            <div class="action-buttons">
-                <button id="save-schedule">Сохранить</button>
-                <button id="try-again">Ещё раз</button>
-            </div>
         </section>
+        <div class="action-buttons hidden">
+            <button id="save-schedule">Сохранить</button>
+            <button id="try-again">Ещё раз</button>
+        </div>
 
         <div class="ad-banner">
             <a id="ad-link" href="https://t.me/By_RORlil" target="_blank">
